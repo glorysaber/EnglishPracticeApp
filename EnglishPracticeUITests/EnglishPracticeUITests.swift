@@ -2,7 +2,7 @@
 //  EnglishPracticeUITests.swift
 //  EnglishPracticeUITests
 //
-//  Created by Admin on 8/13/25.
+//  Created by Stephen Kac Lozano on 8/13/25.
 //
 
 import XCTest
