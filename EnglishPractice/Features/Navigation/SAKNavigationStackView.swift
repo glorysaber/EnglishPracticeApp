@@ -8,6 +8,48 @@
 import SwiftUI
 import OSLog
 
+// Custom modifier for vertical offset
+struct VerticalPushModifier: ViewModifier {
+    let offset: CGFloat  // Positive for bottom, negative for top
+    
+    func body(content: Content) -> some View {
+        content.offset(y: offset)
+    }
+}
+
+// Extension to create the transition
+extension AnyTransition {
+    @MainActor
+    static func verticalPush(towards direction: SwiftUI.Edge = .top) -> AnyTransition {
+        
+        let offset: CGFloat = switch direction {
+        case .top:
+            UIScreen.main.bounds.height
+        case .bottom:
+            -UIScreen.main.bounds.height
+        case .leading:
+            UIScreen.main.bounds.width
+        case .trailing:
+            -UIScreen.main.bounds.width
+        }
+        
+        return .asymmetric(
+            insertion: .modifier(
+                active: VerticalPushModifier(offset: offset),  // Start from bottom
+                identity: VerticalPushModifier(offset: 0)
+            ),
+            removal: .modifier(
+                active: VerticalPushModifier(offset: -offset),  // Slide to top
+                identity: VerticalPushModifier(offset: 0)
+            )
+        )
+    }
+}
+
+enum NavigationDirection {
+    case push, pop
+}
+
 /// A custom navigation stack for SwiftUI that manages a stack of views with push/pop functionality.
 /// Uses environment values for navigation actions and supports customizable transitions.
 /// Optimized by minimizing view recreations and using efficient state management.
@@ -16,23 +58,26 @@ struct SAKNavigationStack<Content: View>: View {
     /// Stack to hold navigated views with unique IDs for identity preservation.
     @State private var viewStack: [(id: UUID, view: AnyView)] = []
     
+    /// Direction of the navigation action to determine the transition.
+    @State private var navigationDirection: NavigationDirection = .push
+    
     /// The root view to display when the stack is empty.
     private let rootView: Content
     
-    /// Customizable transition for navigation animations.
-    private let transition: AnyTransition
-    
-    /// Initializes the navigation stack with a root view and optional transition.
-    /// - Parameters:
-    ///   - transition: The transition to use for push/pop (default: asymmetric slide with opacity).
-    ///   - rootView: A view builder for the root content.
-    init(transition: AnyTransition = .asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-         ),
-         @ViewBuilder rootView: () -> Content) {
+    /// Initializes the navigation stack with a root view.
+    /// - Parameter rootView: A view builder for the root content.
+    init(@ViewBuilder rootView: () -> Content) {
         self.rootView = rootView()
-        self.transition = transition
+    }
+    
+    /// Computes the dynamic transition based on navigation direction.
+    private func dynamicTransition() -> AnyTransition {
+        let insertion: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top) : .verticalPush(towards: .bottom)
+        let removal: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top) : .verticalPush(towards: .bottom)
+        return .asymmetric(
+            insertion: insertion,
+            removal: removal
+        )
     }
     
     var body: some View {
@@ -40,27 +85,32 @@ struct SAKNavigationStack<Content: View>: View {
             // Display root view when stack is empty, with opacity transition for smooth root return.
             if viewStack.isEmpty {
                 rootView
-                    .transition(.opacity)
+                    .transition(dynamicTransition())
             } else {
-                // Display the top view from the stack with the specified transition.
+                // Display the top view from the stack with the dynamic transition.
                 viewStack.last?.view
-                    .transition(transition)
+                    .transition(dynamicTransition())
             }
         }
         // Inject navigation actions into the environment for child views to use.
         .environment(\.push) { view in
-            // Use spring animation for natural feel; optimized for performance with damping.
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            // Set direction to push and animate.
+            navigationDirection = .push
+            withAnimation(.easeInOut) {
                 viewStack.append((UUID(), AnyView(view)))
             }
         }
         .environment(\.pop) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            // Set direction to pop and animate.
+            navigationDirection = .pop
+            withAnimation(.easeInOut) {
                 _ = viewStack.popLast()
             }
         }
         .environment(\.popToRoot) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            // Set direction to pop and animate.
+            navigationDirection = .pop
+            withAnimation(.spring()) {
                 viewStack.removeAll()
             }
         }
@@ -69,29 +119,27 @@ struct SAKNavigationStack<Content: View>: View {
 
 // Environment values defined using @Entry to handle concurrency safely in Swift 6.
 extension EnvironmentValues {
-    
     /// Pushes a new view onto the stack.
-    @Entry var push: (AnyView) -> Void = {
-        _ in
+    @Entry var push: (AnyView) -> Void = { _ in
         Logger.view.error("No Navigation Stack found when push was called. \(Thread.callStackSymbols)")
-#if DEBUG
+        #if DEBUG
         fatalError()
-#endif
+        #endif
     }
     
     /// Pops the top view from the stack.
     @Entry var pop: () -> Void = {
         Logger.view.error("No Navigation Stack found when pop was called. \(Thread.callStackSymbols)")
-#if DEBUG
+        #if DEBUG
         fatalError()
-#endif
+        #endif
     }
     
     /// Pops all views back to the root.
     @Entry var popToRoot: () -> Void = {
         Logger.view.error("No Navigation Stack found when popToRoot was called. \(Thread.callStackSymbols)")
-#if DEBUG
+        #if DEBUG
         fatalError()
-#endif
+        #endif
     }
 }
