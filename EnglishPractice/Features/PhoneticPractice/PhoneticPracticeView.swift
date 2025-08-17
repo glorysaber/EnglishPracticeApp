@@ -6,117 +6,67 @@
 //
 
 import SwiftUI
-import AVFoundation
 import OSLog
 
 @MainActor
 @Observable
 final class PhoneticPracticeViewState {
     var isPressed = false
+    var word = ""
+    var phoneticLetters: [String] = []
 }
 
-let spanishPhoneticToEnglishLetter: [String: String] = [
-    "A": "ei",
-    "B": "bi",
-    "C": "si",
-    "D": "di",
-    "E": "i",
-    "F": "ef",
-    "G": "yi",
-    "H": "eich",
-    "I": "ai",
-    "J": "yei",
-    "K": "kei",
-    "L": "el",
-    "M": "em",
-    "N": "en",
-    "O": "ou",
-    "P": "pi",
-    "Q": "kiu",
-    "R": "ar",
-    "S": "es",
-    "T": "ti",
-    "U": "iu",
-    "V": "vi",
-    "W": "dabeliu",
-    "X": "ex",
-    "Y": "wai",
-    "Z": "zi"
-    ]
-
 struct PhoneticPracticeView: View {
-    let audioSession = AVAudioSession.sharedInstance()
-    let synthesizer = AVSpeechSynthesizer()
-    
-    let word = "Mujer"
-    
-    var phoneticLetters: String {
-        word.uppercased().reduce("") { result, letter in
-            result + " " + (spanishPhoneticToEnglishLetter[String(letter)] ?? String(letter))
-        }
-    }
     
     @State private var state = PhoneticPracticeViewState()
+    private let viewModel: PhoneticPracticeViewModel
     
-    let logger: Logger
+    @Environment(\.pop) private var pop
+    
+    private var logger: Logger
     
     var body: some View {
         VStack(spacing: 20) {
             Text(verbatim: "What word is this?")
+                .font(.largeTitle)
             if state.isPressed {
-                Text(verbatim: word)
+                Text(verbatim: state.word)
+                    .font(.subheadline)
             } else {
-                Text(verbatim: phoneticLetters)
+                Text(verbatim: state.phoneticLetters.joined(separator: " "))
+                    .font(.subheadline)
             }
             Button("Speak") {
-                speak()
+                viewModel.speak()
             }
             .buttonStyle(.borderedProminent)
-            .task { setupAudioSession() }
-//            Button {} label: {
-                Text("Answer")
-                    .onLongPressGesture {
-                        if state.isPressed == false {
-                            speakWord()
-                            state.isPressed = true
-                        }
-                    } onPressingChanged: { pressed in
-                        state.isPressed = pressed
+            Text("Answer")
+                .onLongPressGesture {
+                    if state.isPressed == false {
+                        viewModel.speak()
+                        state.isPressed = true
                     }
-//            }
-//            .buttonStyle(.bordered)
+                } onPressingChanged: { pressed in
+                    state.isPressed = pressed
+                }
+            Button {
+                pop()
+            } label: {
+                Text("Pop").padding()
+            }
         }
+        .padding()
+        .background(Color.blue)
         .padding()
     }
     
-    func speak() {
-        if synthesizer.isSpeaking {
-            return
-        }
-        let utterance = AVSpeechUtterance(string: phoneticLetters)
-        utterance.voice = AVSpeechSynthesisVoice(language: "es-US")
-        utterance.rate = 0.01
-        synthesizer.speak(utterance)
-            
-    }
-    
-    func speakWord() {
-        let utterance = AVSpeechUtterance(string: word)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = 0.001
-        synthesizer.speak(utterance)
-    }
-    
-    func setupAudioSession() {
-        do {
-            try audioSession.setCategory(.playback, mode: .voicePrompt, options: .duckOthers)
-            try audioSession.setActive(true)
-        } catch {
-            logger.error("Error in setting up audio session: \(error)")
-        }
+    init(initialState: PhoneticPracticeViewState = PhoneticPracticeViewState(), logger: Logger = .view) {
+        self.state = initialState
+        self.logger = logger
+        self.viewModel = PhoneticPracticeViewModel(logger: logger, speechService: SpeechSynthesisService(logger: logger), viewState: initialState)
     }
 }
 
 #Preview {
-    PhoneticPracticeView(logger: .view)
+    PhoneticPracticeView()
 }

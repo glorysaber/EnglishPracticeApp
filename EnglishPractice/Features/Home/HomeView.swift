@@ -19,6 +19,7 @@ struct HomeView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
+            Text("Current Streak 0!").font(.subheadline).fontWeight(.bold).foregroundColor(.white)
             gradientBackground
             VStack(spacing: 20) {
                 Text("Ready to practice English?")
@@ -30,9 +31,8 @@ struct HomeView: View {
                         .font(.headline)
                 }
                 .buttonStyle(.borderedProminent)
-                Text("Current Streak 0!")
             }
-            .padding()
+            .padding(25)
             .background(Color.yellow.clipShape(CustomCardShape()))
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: -2)
         }
@@ -41,7 +41,7 @@ struct HomeView: View {
     private func buttonPressed() {
         logger.log("Practice English Button pressed")
         buttonAction()
-        push(AnyView(PhoneticPracticeView(logger: logger)))
+        push(AnyView(PhoneticPracticeView()))
     }
     
     @ViewBuilder
