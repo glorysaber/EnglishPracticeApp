@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  PhoneticPracticeView.swift
 //  EnglishPractice
 //
 //  Created by Stephen Kac Lozano on 8/13/25.
@@ -11,7 +11,7 @@ import OSLog
 
 @MainActor
 @Observable
-final class ContentViewState {
+final class PhoneticPracticeViewState {
     var isPressed = false
 }
 
@@ -44,7 +44,7 @@ let spanishPhoneticToEnglishLetter: [String: String] = [
     "Z": "zi"
     ]
 
-struct ContentView: View {
+struct PhoneticPracticeView: View {
     let audioSession = AVAudioSession.sharedInstance()
     let synthesizer = AVSpeechSynthesizer()
     
@@ -56,9 +56,9 @@ struct ContentView: View {
         }
     }
     
-    @State private var state = ContentViewState()
+    @State private var state = PhoneticPracticeViewState()
     
-    @Environment(\.logger) var logger
+    let logger: Logger
     
     var body: some View {
         VStack(spacing: 20) {
@@ -109,8 +109,7 @@ struct ContentView: View {
     
     func setupAudioSession() {
         do {
-            try audioSession.setMode(.voicePrompt)
-            try audioSession.setCategory(.playback, mode: .default, options: .duckOthers)
+            try audioSession.setCategory(.playback, mode: .voicePrompt, options: .duckOthers)
             try audioSession.setActive(true)
         } catch {
             logger.error("Error in setting up audio session: \(error)")
@@ -119,5 +118,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    PhoneticPracticeView(logger: .view)
 }

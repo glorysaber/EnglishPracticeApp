@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		849C05C42E5161D6009CD831 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 849C05C32E5161D6009CD831 /* SwiftUI.framework */; };
+		849C05C82E516205009CD831 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 849C05C72E516205009CD831 /* CoreAudio.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		849C05872E4D4A1E009CD831 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +32,9 @@
 		849C05782E4D4A1D009CD831 /* EnglishPractice.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EnglishPractice.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		849C05862E4D4A1E009CD831 /* EnglishPracticeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EnglishPracticeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		849C05902E4D4A1E009CD831 /* EnglishPracticeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EnglishPracticeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		849C05C32E5161D6009CD831 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/SwiftUI.framework; sourceTree = DEVELOPER_DIR; };
+		849C05C52E5161DD009CD831 /* CoreAudioTypes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioTypes.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/CoreAudioTypes.framework; sourceTree = DEVELOPER_DIR; };
+		849C05C72E516205009CD831 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/CoreAudio.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,6 +60,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				849C05C82E516205009CD831 /* CoreAudio.framework in Frameworks */,
+				849C05C42E5161D6009CD831 /* SwiftUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +88,7 @@
 				849C057A2E4D4A1D009CD831 /* EnglishPractice */,
 				849C05892E4D4A1E009CD831 /* EnglishPracticeTests */,
 				849C05932E4D4A1E009CD831 /* EnglishPracticeUITests */,
+				849C05C22E5161D6009CD831 /* Frameworks */,
 				849C05792E4D4A1D009CD831 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +101,16 @@
 				849C05902E4D4A1E009CD831 /* EnglishPracticeUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		849C05C22E5161D6009CD831 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				849C05C72E516205009CD831 /* CoreAudio.framework */,
+				849C05C52E5161DD009CD831 /* CoreAudioTypes.framework */,
+				849C05C32E5161D6009CD831 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

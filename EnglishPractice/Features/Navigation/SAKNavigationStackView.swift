@@ -69,19 +69,29 @@ struct SAKNavigationStack<Content: View>: View {
 
 // Environment values defined using @Entry to handle concurrency safely in Swift 6.
 extension EnvironmentValues {
+    
     /// Pushes a new view onto the stack.
     @Entry var push: (AnyView) -> Void = {
         _ in
         Logger.view.error("No Navigation Stack found when push was called. \(Thread.callStackSymbols)")
+#if DEBUG
+        fatalError()
+#endif
     }
     
     /// Pops the top view from the stack.
     @Entry var pop: () -> Void = {
         Logger.view.error("No Navigation Stack found when pop was called. \(Thread.callStackSymbols)")
+#if DEBUG
+        fatalError()
+#endif
     }
     
     /// Pops all views back to the root.
     @Entry var popToRoot: () -> Void = {
         Logger.view.error("No Navigation Stack found when popToRoot was called. \(Thread.callStackSymbols)")
+#if DEBUG
+        fatalError()
+#endif
     }
 }

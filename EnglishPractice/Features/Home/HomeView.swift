@@ -24,9 +24,7 @@ struct HomeView: View {
                 Text("Ready to practice English?")
                     .font(.largeTitle)
                 Button {
-                    logger.log("Practice English Button pressed")
-                    buttonAction()
-                    push(AnyView(ContentView()))
+                    buttonPressed()
                 } label: {
                     Text("Lets Start practice!")
                         .font(.headline)
@@ -38,6 +36,12 @@ struct HomeView: View {
             .background(Color.yellow.clipShape(CustomCardShape()))
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: -2)
         }
+    }
+    
+    private func buttonPressed() {
+        logger.log("Practice English Button pressed")
+        buttonAction()
+        push(AnyView(PhoneticPracticeView(logger: logger)))
     }
     
     @ViewBuilder
