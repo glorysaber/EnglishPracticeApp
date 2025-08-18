@@ -25,21 +25,31 @@ struct PhoneticPracticeView: View {
     
     private var logger: Logger
     
+    private var wordLabel: some View {
+        if state.isPressed {
+            Text(verbatim: state.word)
+                .font(.subheadline)
+        } else {
+            Text(verbatim: state.phoneticLetters.joined(separator: " "))
+                .font(.subheadline)
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 20) {
             Text(verbatim: "What word is this?")
                 .font(.largeTitle)
-            if state.isPressed {
-                Text(verbatim: state.word)
-                    .font(.subheadline)
-            } else {
-                Text(verbatim: state.phoneticLetters.joined(separator: " "))
-                    .font(.subheadline)
+            HStack {
+                wordLabel
+                Button {
+                    viewModel.speak()
+                } label: {
+                    Image(systemName: "play.fill")
+                        .accessibilityLabel("Play")
+                        .foregroundStyle(.white)
+                }
             }
-            Button("Speak") {
-                viewModel.speak()
-            }
-            .buttonStyle(.borderedProminent)
+            
             Text("Answer")
                 .onLongPressGesture {
                     if state.isPressed == false {
@@ -63,7 +73,7 @@ struct PhoneticPracticeView: View {
     init(initialState: PhoneticPracticeViewState = PhoneticPracticeViewState(), logger: Logger = .view) {
         self.state = initialState
         self.logger = logger
-        self.viewModel = PhoneticPracticeViewModel(logger: logger, speechService: SpeechSynthesisService(logger: logger), viewState: initialState)
+        self.viewModel = PhoneticPracticeViewModel(logger: logger, speechService: .shared, viewState: initialState)
     }
 }
 
