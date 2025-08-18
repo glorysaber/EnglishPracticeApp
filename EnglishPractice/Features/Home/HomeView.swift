@@ -10,17 +10,18 @@ import OSLog
 
 struct HomeView: View {
     
+    let colorPalatte: ColorPalatte
     let buttonAction: () -> Void
     
-    var backgroundColor: Color {
-        colorScheme == .light ? .white : .black
-    }
-    
-    @State var gradientColor: Color = .primaryGradient
+    @State var gradientColor: Color
     
     @Environment(\.push) var push
     @Environment(\.logger) var logger
     @Environment(\.colorScheme) var colorScheme
+    
+    var backgroundCard: Color {
+        colorPalatte.card.background
+    }
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -40,9 +41,16 @@ struct HomeView: View {
                 .accentColor(.accentButton)
             }
             .padding(25)
-            .background(Color.backgroundCard.clipShape(CustomCardShape()))
+            .background(backgroundCard.clipShape(CustomCardShape()))
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: -2)
         }
+        .animation(.default, value: colorScheme)
+    }
+    
+    init(colorPalatte: ColorPalatte, buttonAction: @escaping () -> Void) {
+        self.colorPalatte = colorPalatte
+        self.buttonAction = buttonAction
+        gradientColor = colorPalatte.gradient.start
     }
     
     private func buttonPressed() {
@@ -53,7 +61,7 @@ struct HomeView: View {
     
     @ViewBuilder
     var gradientBackground: some View {
-        LinearGradient(gradient: Gradient(colors: [gradientColor, backgroundColor]), startPoint: .top, endPoint: .bottom)
+        LinearGradient(gradient: Gradient(colors: [gradientColor, colorPalatte.background]), startPoint: .top, endPoint: .bottom)
             .ignoresSafeArea()
             .onAppear {
                 withAnimation(
@@ -61,12 +69,12 @@ struct HomeView: View {
                         .repeatForever(autoreverses: true)
                 ) {
                     // Get color from assets
-                    gradientColor = .secondaryGradient
+                    gradientColor = colorPalatte.gradient.start2
                 }
             }
     }
 }
 
 #Preview {
-    HomeView(buttonAction: {})
+    HomeView(colorPalatte: .default, buttonAction: {})
 }

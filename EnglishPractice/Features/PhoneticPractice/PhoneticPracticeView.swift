@@ -22,6 +22,7 @@ struct PhoneticPracticeView: View {
     private let viewModel: PhoneticPracticeViewModel
     
     @Environment(\.pop) private var pop
+    @Environment(\.colorPalatte) private var colorPalatte
     
     private var logger: Logger
     
@@ -39,18 +40,21 @@ struct PhoneticPracticeView: View {
         VStack(spacing: 20) {
             Text(verbatim: "What word is this?")
                 .font(.largeTitle)
+                .foregroundStyle(colorPalatte.text.body)
             HStack {
                 wordLabel
+                    .foregroundStyle(colorPalatte.text.body)
                 Button {
                     viewModel.speak()
                 } label: {
                     Image(systemName: "play.fill")
                         .accessibilityLabel("Play")
-                        .foregroundStyle(.white)
+                        .foregroundStyle(colorPalatte.text.body)
                 }
             }
             
             Text("Answer")
+                .foregroundStyle(colorPalatte.text.body)
                 .onLongPressGesture {
                     if state.isPressed == false {
                         viewModel.speak()
@@ -63,10 +67,12 @@ struct PhoneticPracticeView: View {
                 pop()
             } label: {
                 Text("Pop").padding()
+                    .foregroundStyle(colorPalatte.text.body)
             }
+            .foregroundStyle(colorPalatte.button.background)
         }
         .padding()
-        .background(Color.blue)
+        .background(colorPalatte.card.background)
         .padding()
     }
     

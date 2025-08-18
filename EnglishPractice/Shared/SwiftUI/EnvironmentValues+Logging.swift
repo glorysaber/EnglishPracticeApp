@@ -1,5 +1,5 @@
 //
-//  EnvironmentValue+Logging.swift
+//  EnvironmentValues+Logging.swift
 //  EnglishPractice
 //
 //  Created by Stephen Kac Lozano on 8/16/25.

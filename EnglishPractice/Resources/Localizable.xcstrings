@@ -1,7 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Answer" : {
 
+    },
+    "Current Streak 0!" : {
+
+    },
+    "Give your Husband a Tip!" : {
+
+    },
+    "Hug" : {
+
+    },
+    "Kiss" : {
+
+    },
+    "Let's Start Practice!" : {
+
+    },
+    "Play" : {
+
+    },
+    "Pop" : {
+
+    },
+    "Ready to practice English?" : {
+
+    },
+    "Something Special..." : {
+
+    }
   },
   "version" : "1.0"
 }

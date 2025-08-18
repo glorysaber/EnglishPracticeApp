@@ -6,14 +6,15 @@
 //
 
 import SwiftUI
-import OSLog
 
 @main
 struct EnglishPracticeApp: App {
+    @Environment(\.colorPalatte) var colorPalatte
+    
     var body: some Scene {
         WindowGroup {
             SAKNavigationStack {
-                HomeView(buttonAction: {})
+                HomeView(colorPalatte: colorPalatte, buttonAction: {})
             }
         }
     }
