@@ -12,10 +12,15 @@ struct HomeView: View {
     
     let buttonAction: () -> Void
     
-    @State var gradientColor: Color = .purple
+    var backgroundColor: Color {
+        colorScheme == .light ? .white : .black
+    }
+    
+    @State var gradientColor: Color = .primaryGradient
     
     @Environment(\.push) var push
     @Environment(\.logger) var logger
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -24,16 +29,18 @@ struct HomeView: View {
             VStack(spacing: 20) {
                 Text("Ready to practice English?")
                     .font(.largeTitle)
+                    .foregroundStyle(Color.mainBodyText)
                 Button {
                     buttonPressed()
                 } label: {
-                    Text("Lets Start practice!")
+                    Text("Let's Start Practice!")
                         .font(.headline)
                 }
                 .buttonStyle(.borderedProminent)
+                .accentColor(.accentButton)
             }
             .padding(25)
-            .background(Color.yellow.clipShape(CustomCardShape()))
+            .background(Color.backgroundCard.clipShape(CustomCardShape()))
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: -2)
         }
     }
@@ -46,14 +53,15 @@ struct HomeView: View {
     
     @ViewBuilder
     var gradientBackground: some View {
-        LinearGradient(gradient: Gradient(colors: [gradientColor, .white]), startPoint: .top, endPoint: .bottom)
+        LinearGradient(gradient: Gradient(colors: [gradientColor, backgroundColor]), startPoint: .top, endPoint: .bottom)
             .ignoresSafeArea()
             .onAppear {
                 withAnimation(
                     Animation.easeInOut(duration: 10.0)
                         .repeatForever(autoreverses: true)
                 ) {
-                    gradientColor = .blue
+                    // Get color from assets
+                    gradientColor = .secondaryGradient
                 }
             }
     }
