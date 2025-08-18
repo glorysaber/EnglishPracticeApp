@@ -9,24 +9,48 @@ import Foundation
 import AVFoundation
 
 @MainActor
-struct SpeechSynthesisService: Sendable {
-    let audioSession = AVAudioSession.sharedInstance()
-    let synthesizer = AVSpeechSynthesizer()
-    let logger: Logger
+final class SpeechSynthesisService: Sendable {
+    typealias Stream = AsyncStream<SpeechSynthesisEvent>
     
-    init(logger: Logger) {
-        self.logger = logger
-        setupAudioSession()
+    enum SpeechSynthesisError: Error {
+        case alreadySpeaking
     }
     
-    func speak(word: String) {
+    enum SpeechSynthesisEvent {
+        case speaking
+        case finished
+    }
+    
+    static let shared = SpeechSynthesisService(logger: .englishPractice)
+    
+    private let audioSession = AVAudioSession.sharedInstance()
+    private let synthesizer = AVSpeechSynthesizer()
+    private let logger: Logger
+    private let synthesizerDelegate: SpeechSynthesisServiceDelegate
+    
+    private init(logger: Logger) {
+        self.logger = logger
+        self.synthesizerDelegate = SpeechSynthesisServiceDelegate(logger: logger)
+        setupAudioSession()
+        
+        synthesizer.delegate = synthesizerDelegate
+    }
+    
+    func speak(utterance: String) throws(SpeechSynthesisError) -> AsyncStream<SpeechSynthesisEvent> {
         if synthesizer.isSpeaking {
-            return
+            throw SpeechSynthesisError.alreadySpeaking
         }
-        let utterance = AVSpeechUtterance(string: word)
-        utterance.voice = AVSpeechSynthesisVoice(language: "es-US")
+        let utterance = AVSpeechUtterance(string: utterance)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         utterance.rate = 0.01
+        
+        let stream = Stream { continuation in
+            self.synthesizerDelegate.utterances[utterance] = continuation
+        }
+        
         synthesizer.speak(utterance)
+        
+        return stream
     }
     
     func setupAudioSession() {
@@ -36,5 +60,63 @@ struct SpeechSynthesisService: Sendable {
         } catch {
             logger.error("Error in setting up audio session: \(error)")
         }
+    }
+}
+
+@MainActor
+private final class SpeechSynthesisServiceDelegate: NSObject, Sendable, @preconcurrency AVSpeechSynthesizerDelegate {
+    
+    let logger: Logger
+    
+    var utterances = [AVSpeechUtterance : SpeechSynthesisService.Stream.Continuation]()
+    
+    init(logger: Logger) {
+        self.logger = logger
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        guard let continuation = utterances[utterance] else {
+            logger.error("Failed to find utterance for didStart \(utterance)")
+            return
+        }
+        
+        continuation.yield(.speaking)
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        guard let continuation = utterances[utterance] else {
+            logger.error("Failed to find utterance for didFinish \(utterance)")
+            return
+        }
+        
+        continuation.yield(.finished)
+        continuation.finish()
+        utterances[utterance] = nil
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+        
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+        
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        guard let continuation = utterances[utterance] else {
+            logger.error("Failed to find utterance for cancellation \(utterance)")
+            return
+        }
+        continuation.yield(.finished)
+        continuation.finish()
+        utterances[utterance] = nil
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+        
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeak marker: AVSpeechSynthesisMarker, utterance: AVSpeechUtterance) {
+        
     }
 }

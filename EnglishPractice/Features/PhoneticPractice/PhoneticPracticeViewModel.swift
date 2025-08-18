@@ -37,6 +37,12 @@ struct PhoneticPracticeViewModel: Sendable {
     
     @MainActor
     func speak() {
-        speechService.speak(word: viewState.word)
+        Task {
+            for letter in viewState.word {
+                guard let stream = try? speechService.speak(utterance: String(letter.lowercased())) else { continue }
+                for await _ in stream {}
+                _ = try? await ContinuousClock().sleep(for: .seconds(1))
+            }
+        }
     }
 }
