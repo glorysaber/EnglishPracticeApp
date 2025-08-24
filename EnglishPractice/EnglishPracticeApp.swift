@@ -9,13 +9,14 @@ import SwiftUI
 
 @main
 struct EnglishPracticeApp: App {
-    @Environment(\.colorPalatte) var colorPalatte
+    static let colorManager = ColorPaletteManager(resource: Bundle.main.url(forResource: "Colors", withExtension: "json")!)
     
     var body: some Scene {
         WindowGroup {
             SAKNavigationStack {
-                HomeView(colorPalatte: colorPalatte, buttonAction: {})
+                HomeView(buttonAction: {})
             }
+            .adaptiveColorPalette(manager: Self.colorManager)
         }
     }
 }

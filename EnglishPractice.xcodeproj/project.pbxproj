@@ -37,9 +37,22 @@
 		849C05C72E516205009CD831 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/CoreAudio.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		84D4365D2E5A811900416A8F /* Exceptions for "EnglishPractice" folder in "Compile Sources" phase from "EnglishPractice" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 849C05742E4D4A1D009CD831 /* Sources */;
+			membershipExceptions = (
+				Resources/Colors.json,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		849C057A2E4D4A1D009CD831 /* EnglishPractice */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				84D4365D2E5A811900416A8F /* Exceptions for "EnglishPractice" folder in "Compile Sources" phase from "EnglishPractice" target */,
+			);
 			path = EnglishPractice;
 			sourceTree = "<group>";
 		};

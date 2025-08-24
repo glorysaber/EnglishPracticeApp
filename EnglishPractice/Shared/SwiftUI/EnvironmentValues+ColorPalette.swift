@@ -1,5 +1,5 @@
 //
-//  EnvironmentValues+ColorPalatte.swift
+//  EnvironmentValues+ColorPalette.swift
 //  EnglishPractice
 //
 //  Created by Stephen Kac Lozano on 8/18/25.
@@ -9,5 +9,5 @@ import Foundation
 import SwiftUI
 
 extension EnvironmentValues {
-    @Entry var colorPalatte: ColorPalatte = ColorPalatte.default
+    @Entry var colorPalette = ColorPalette<Color>.standard
 }

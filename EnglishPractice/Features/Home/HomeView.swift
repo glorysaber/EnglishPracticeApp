@@ -10,47 +10,68 @@ import OSLog
 
 struct HomeView: View {
     
-    let colorPalatte: ColorPalatte
     let buttonAction: () -> Void
     
-    @State var gradientColor: Color
+    @State var gradientColor: Color = .green
+    @State var endPoint: UnitPoint = .bottomTrailing
+    
+    var overlayColor: Color {
+        colorPalette.text.overlay
+    }
     
     @Environment(\.push) var push
     @Environment(\.logger) var logger
     @Environment(\.colorScheme) var colorScheme
-    
-    var backgroundCard: Color {
-        colorPalatte.card.background
-    }
+    @Environment(\.colorPalette) var colorPalette
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Text("Current Streak 0!").font(.subheadline).fontWeight(.bold).foregroundColor(.white)
+        ZStack {
             gradientBackground
-            VStack(spacing: 20) {
+            VStack(spacing: 30) {
+                Text("Current Streak: 0 🔥")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(overlayColor)
+                    .padding(.top, 50)
+                
+                Spacer()
+                
+                Image(systemName: "book.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 120)
+                    .foregroundStyle(overlayColor.opacity(0.9))
+                
                 Text("Ready to practice English?")
                     .font(.largeTitle)
-                    .foregroundStyle(Color.mainBodyText)
+                    .fontWeight(.bold)
+                    .foregroundStyle(overlayColor)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                
                 Button {
                     buttonPressed()
                 } label: {
                     Text("Let's Start Practice!")
                         .font(.headline)
+                        .fontWeight(.medium)
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 15)
+                    .background(colorPalette.button.background)
+                    .foregroundStyle(colorPalette.text.body)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
                 }
-                .buttonStyle(.borderedProminent)
-                .accentColor(.accentButton)
+                
+                Spacer()
             }
-            .padding(25)
-            .background(backgroundCard.clipShape(CustomCardShape()))
-            .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: -2)
+            .padding(.bottom, 50)
         }
         .animation(.default, value: colorScheme)
     }
     
-    init(colorPalatte: ColorPalatte, buttonAction: @escaping () -> Void) {
-        self.colorPalatte = colorPalatte
+    init(buttonAction: @escaping () -> Void) {
         self.buttonAction = buttonAction
-        gradientColor = colorPalatte.gradient.start
     }
     
     private func buttonPressed() {
@@ -61,20 +82,21 @@ struct HomeView: View {
     
     @ViewBuilder
     var gradientBackground: some View {
-        LinearGradient(gradient: Gradient(colors: [gradientColor, colorPalatte.background]), startPoint: .top, endPoint: .bottom)
+        LinearGradient(gradient: Gradient(colors: [gradientColor, colorPalette.background]), startPoint: .top, endPoint: endPoint)
             .ignoresSafeArea()
-            .onAppear {
+            .onChange(of: colorPalette, initial: true) { oldValue, newValue in
+                gradientColor = colorPalette.gradient.start
                 withAnimation(
                     Animation.easeInOut(duration: 10.0)
                         .repeatForever(autoreverses: true)
                 ) {
-                    // Get color from assets
-                    gradientColor = colorPalatte.gradient.start2
+                    gradientColor = colorPalette.gradient.start2
+                    endPoint = .bottomLeading
                 }
             }
     }
 }
 
 #Preview {
-    HomeView(colorPalatte: .default, buttonAction: {})
+    HomeView(buttonAction: {})
 }

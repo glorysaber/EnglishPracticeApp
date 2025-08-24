@@ -1,0 +1,44 @@
+{
+    "light": {
+        "name": "Default",
+        "pop": "e64a19ff",
+        "grow": "388e3cff",
+        "background": "ffd504ff",
+        "text": {
+            "body": "eaeaeaff",
+            "overlay": "ffffffff"
+        },
+        "gradient": {
+            "start": "4e1370ff",
+            "start2": "6a1b9aff",
+            "end": "ffd504ff"
+        },
+        "card": {
+            "background": "ffd504ff"
+        },
+        "button": {
+            "background": "011892ff"
+        }
+    },
+    "dark": {
+        "name": "Default",
+        "pop": "ff5722ff",
+        "grow": "4caf50ff",
+        "background": "ffd504ff",
+        "text": {
+            "body": "212121ff",
+            "overlay": "ffffffff"
+        },
+        "gradient": {
+            "start": "6a1b9aff",
+            "start2": "8f2fdaff",
+            "end": "ffd504ff"
+        },
+        "card": {
+            "background": "ffeb3bff"
+        },
+        "button": {
+            "background": "2196f3ff"
+        }
+    }
+}
