@@ -66,16 +66,16 @@ extension ColorPalette.Gradient: Codable where ColorT: Codable {}
 extension ColorPalette.Card: Codable where ColorT: Codable {}
 
 extension ColorPalette where ColorT == Color {
-    static var standard: Self {
+    static var unknown: Self {
         ColorPalette<Color>(
-            name: "Default",
-            pop: .pop,
-            grow: .growAccent,
-            background: .background,
-            text: Text(body: .mainBodyText, overlay: .white),
-            gradient: Gradient(start: .primaryGradient, start2: .secondaryGradient, end: .background),
-            card: Card(background: .backgroundCard),
-            button: Button(background: .accentButton)
+            name: "unknown",
+            pop: .white,
+            grow: .white,
+            background: .white,
+            text: Text(body: .black, overlay: .black),
+            gradient: Gradient(start: .white, start2: .white, end: .white),
+            card: Card(background: .white),
+            button: Button(background: .white)
         )
     }
     

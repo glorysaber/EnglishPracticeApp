@@ -9,5 +9,5 @@ import Foundation
 import SwiftUI
 
 extension EnvironmentValues {
-    @Entry var colorPalette = ColorPalette<Color>.standard
+    @Entry var colorPalette = ColorPalette<Color>.unknown
 }

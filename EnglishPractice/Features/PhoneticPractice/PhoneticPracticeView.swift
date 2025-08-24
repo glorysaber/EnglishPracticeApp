@@ -14,6 +14,16 @@ final class PhoneticPracticeViewState {
     var isPressed = false
     var word = ""
     var phoneticLetters: [String] = []
+    var currentSpeakingIndex: Int? = nil
+    var guess: String = ""
+    var showAnswer = false
+    
+    enum PracticeState: Equatable {
+        case guessing
+        case finished(correct: Bool)
+    }
+    
+    var practiceState: PracticeState = .guessing
 }
 
 struct PhoneticPracticeView: View {
@@ -26,54 +36,158 @@ struct PhoneticPracticeView: View {
     
     private var logger: Logger
     
-    private var wordLabel: some View {
-        if state.isPressed {
-            Text(verbatim: state.word)
-                .font(.subheadline)
-        } else {
-            Text(verbatim: state.phoneticLetters.joined(separator: " "))
-                .font(.subheadline)
+    @State private var gradientColor: Color = .purple
+    @State private var endPoint: UnitPoint = .topTrailing
+    
+    private var phoneticDisplay: some View {
+        HStack(spacing: 12) {
+            ForEach(state.phoneticLetters.indices, id: \.self) { index in
+                Text(state.phoneticLetters[index])
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        state.currentSpeakingIndex == index
+                            ? colorPalette.pop.opacity(0.8)
+                            : colorPalette.card.background.opacity(0.3)
+                    )
+                    .foregroundStyle(colorPalette.text.body)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .scaleEffect(state.currentSpeakingIndex == index ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 0.3), value: state.currentSpeakingIndex)
+                    .shadow(color: colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1), radius: 2)
+            }
+        }
+        .padding()
+    }
+    
+    private var wordDisplay: some View {
+        Text(state.word)
+            .font(.title2)
+            .fontWeight(.bold)
+            .foregroundStyle(colorPalette.text.body)
+    }
+    
+    @ViewBuilder
+    private var feedback: some View {
+        switch state.practiceState {
+        case .guessing:
+            EmptyView()
+        case .finished(let correct):
+            Text(correct ? "Correct!" : "Try Again!")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(correct ? colorPalette.grow : colorPalette.pop)
+                .padding(.top, 12)
+                .transition(.opacity)
+                .animation(.easeIn, value: state.practiceState)
         }
     }
     
-    var body: some View {
-        VStack(spacing: 20) {
-            Text(verbatim: "What word is this?")
-                .font(.largeTitle)
-                .foregroundStyle(colorPalette.text.body)
-            HStack {
-                wordLabel
+    private var guessInput: some View {
+        Group {
+            if case .guessing = state.practiceState {
+                TextField("Your guess", text: $state.guess)
+                    .textFieldStyle(.roundedBorder)
                     .foregroundStyle(colorPalette.text.body)
-                Button {
-                    viewModel.speak()
-                } label: {
-                    Image(systemName: "play.fill")
-                        .accessibilityLabel("Play")
-                        .foregroundStyle(colorPalette.text.body)
+                    .background(colorPalette.card.background)
+                    .padding(.horizontal, 40)
+                    .shadow(radius: 4)
+                
+                Button("Submit Guess") {
+                    viewModel.checkGuess()
                 }
+                .font(.headline)
+                .padding(.horizontal, 30)
+                .padding(.vertical, 15)
+                .background(colorPalette.button.background)
+                .foregroundStyle(colorPalette.text.overlay)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(color: colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
             }
-            
-            Text("Answer")
-                .foregroundStyle(colorPalette.text.body)
-                .onLongPressGesture {
-                    if state.isPressed == false {
-                        viewModel.speak()
-                        state.isPressed = true
-                    }
-                } onPressingChanged: { pressed in
-                    state.isPressed = pressed
-                }
-            Button {
-                pop()
-            } label: {
-                Text("Pop").padding()
-                    .foregroundStyle(colorPalette.text.body)
-            }
-            .foregroundStyle(colorPalette.button.background)
         }
-        .padding()
-        .background(colorPalette.card.background)
-        .padding()
+    }
+    
+    @Environment(\.colorScheme) private var colorScheme
+    
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [gradientColor, colorPalette.gradient.start2, colorPalette.gradient.end], startPoint: .bottom, endPoint: endPoint)
+                .ignoresSafeArea()
+                .onChange(of: colorPalette, initial: true) { oldValue, newValue in
+                    gradientColor = colorPalette.gradient.start
+                    withAnimation(
+                        Animation.easeInOut(duration: 10.0)
+                            .repeatForever(autoreverses: true)
+                    ) {
+                        gradientColor = colorPalette.gradient.start2
+                        endPoint = .topLeading
+                    }
+                }
+            
+            VStack(spacing: 24) {
+                Text("What word is this?")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(colorPalette.text.body)
+                
+                HStack {
+                    if state.isPressed || state.showAnswer {
+                        wordDisplay
+                    } else {
+                        phoneticDisplay
+                    }
+                    Button {
+                        viewModel.speak()
+                    } label: {
+                        Image(systemName: "play.fill")
+                            .accessibilityLabel("Play")
+                            .foregroundStyle(colorPalette.text.body)
+                            .padding(12)
+                            .background(colorPalette.button.background.opacity(0.3))
+                            .clipShape(Circle())
+                            .shadow(color: colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1), radius: 4)
+                    }
+                }
+                
+                guessInput
+                
+                feedback
+                
+                Text("Hold to Reveal Answer")
+                    .font(.subheadline)
+                    .foregroundStyle(colorPalette.text.body.opacity(0.7))
+                    .padding(8)
+                    .background(colorPalette.background.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .onLongPressGesture {
+                        if !state.isPressed {
+                            viewModel.speak()
+                            state.isPressed = true
+                            state.showAnswer = true
+                        }
+                    } onPressingChanged: { pressed in
+                        state.isPressed = pressed
+                    }
+                
+                Button {
+                    pop()
+                } label: {
+                    Text("Back").padding(.horizontal, 20).padding(.vertical, 10)
+                        .foregroundStyle(colorPalette.text.overlay)
+                }
+                .background(colorPalette.button.background)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.2), radius: 4)
+            }
+            .padding(20)
+            .background(colorPalette.card.background)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.2), radius: 10)
+            .padding()
+        }
+        
     }
     
     init(initialState: PhoneticPracticeViewState = PhoneticPracticeViewState(), logger: Logger = .view) {
@@ -84,5 +198,5 @@ struct PhoneticPracticeView: View {
 }
 
 #Preview {
-    PhoneticPracticeView()
+    PhoneticPracticeView().adaptiveColorPalette(manager: ._debugManager())
 }

@@ -15,13 +15,13 @@ final class ColorPaletteManager {
     private let lightPalette: ColorPalette<Color>
     private let darkPalette: ColorPalette<Color>
     
-    init(light: ColorPalette<Color> = .standard, dark: ColorPalette<Color>) {
+    init(light: ColorPalette<Color>, dark: ColorPalette<Color>) {
         self.lightPalette = light
         self.darkPalette = dark
         self.currentPalette = light  // Default to light
     }
     
-    init(resource: URL, onError: (any Error) -> Void = { _ in }) {
+    init(resource: URL, defaultPalette: ColorPalette<Color>? = nil, onError: (any Error) -> Void = { _ in }) {
         do {
             let data = try Data(contentsOf: resource)
             let decoder = JSONDecoder()
@@ -33,25 +33,33 @@ final class ColorPaletteManager {
                 self.currentPalette = lightPalette
             } else {
                 onError(GeneralError(userDescritpion: "Failed to load Color Scheme light, falling back to standard"))
-                self.lightPalette = .standard
-                self.currentPalette = .standard
+                self.lightPalette = defaultPalette ?? .unknown
+                self.currentPalette = defaultPalette ?? .unknown
             }
             
             if let darkPalette = palettes["dark"] {
                 self.darkPalette = ColorPalette(darkPalette)
             } else {
                 onError(GeneralError(userDescritpion: "Failed to load Color Scheme dark, falling back to standard"))
-                self.darkPalette = .standard
+                self.darkPalette = defaultPalette ?? .unknown
             }
         } catch {
             onError(GeneralError(userDescritpion: "Failed to load Color Schemes, falling back to standard"))
-            self.lightPalette = .standard
-            self.darkPalette = .standard
-            self.currentPalette = .standard
+            self.lightPalette = defaultPalette ?? .unknown
+            self.darkPalette = defaultPalette ?? .unknown
+            self.currentPalette = defaultPalette ?? .unknown
         }
-        
-        
     }
+    
+    static func _debugManager(file: StaticString = #filePath, line: UInt = #line) -> ColorPaletteManager {
+        #if !DEBUG
+        Logger.englishPractice.log("Loading debug shared instance for ColorPaletteManager!!!!! \(file):\(line)")
+        #endif
+        ColorPaletteManager(resource: Bundle.main.url(forResource: "Colors", withExtension: "json")!) { error in
+            assertionFailure("Failed to load assets with Error: \(error)")
+        }
+    }
+        
     
     func update(for scheme: ColorScheme) {
         currentPalette = (scheme == .dark) ? darkPalette : lightPalette
@@ -69,15 +77,6 @@ struct AdaptiveColorPaletteModifier: ViewModifier {
             .environment(\.colorPalette, manager.currentPalette)
             .onChange(of: colorScheme) { oldScheme, newScheme in
                 manager.update(for: newScheme)
-                // Encode currentPalette to JSON
-                let encoder = JSONEncoder()
-                let rgbaPalette = ColorPalette<RGBAColor>(manager.currentPalette, in: environment)
-                
-                encoder.outputFormatting = [.prettyPrinted]
-                
-                if let data = try? encoder.encode(rgbaPalette) {
-                    print(String(data: data, encoding: .utf8) ?? "FAILED TO CONVERT TO JSON")
-                }
             }
     }
 }

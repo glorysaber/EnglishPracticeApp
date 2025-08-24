@@ -38,11 +38,23 @@ struct PhoneticPracticeViewModel: Sendable {
     @MainActor
     func speak() {
         Task {
-            for letter in viewState.word {
+            for (index, letter) in viewState.word.enumerated() {
+                viewState.currentSpeakingIndex = index
                 guard let stream = try? speechService.speak(utterance: String(letter.lowercased())) else { continue }
-                for await _ in stream {}
-                _ = try? await ContinuousClock().sleep(for: .seconds(1))
+                for await event in stream {
+                    if case .finished = event {
+                        break
+                    }
+                }
+                viewState.currentSpeakingIndex = nil
+                try? await ContinuousClock().sleep(for: .seconds(1))
             }
         }
+    }
+    
+    func checkGuess() {
+        let isCorrect = viewState.guess.lowercased() == viewState.word.lowercased()
+        viewState.practiceState = .finished(correct: isCorrect)
+        viewState.showAnswer = true
     }
 }

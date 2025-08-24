@@ -1,13 +1,19 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Answer" : {
+    "Back" : {
+
+    },
+    "Correct!" : {
 
     },
     "Current Streak: 0 🔥" : {
 
     },
     "Give your Husband a Tip!" : {
+
+    },
+    "Hold to Reveal Answer" : {
 
     },
     "Hug" : {
@@ -22,13 +28,22 @@
     "Play" : {
 
     },
-    "Pop" : {
-
-    },
     "Ready to practice English?" : {
 
     },
     "Something Special..." : {
+
+    },
+    "Submit Guess" : {
+
+    },
+    "Try Again!" : {
+
+    },
+    "What word is this?" : {
+
+    },
+    "Your guess" : {
 
     }
   },

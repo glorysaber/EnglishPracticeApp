@@ -17,6 +17,15 @@ struct VerticalPushModifier: ViewModifier {
     }
 }
 
+// Custom modifier for vertical offset
+struct HorizantalPushModifier: ViewModifier {
+    let offset: CGFloat  // Positive for bottom, negative for top
+    
+    func body(content: Content) -> some View {
+        content.offset(x: offset)
+    }
+}
+
 // Extension to create the transition
 extension AnyTransition {
     @MainActor
@@ -33,16 +42,31 @@ extension AnyTransition {
             -UIScreen.main.bounds.width
         }
         
-        return .asymmetric(
-            insertion: .modifier(
-                active: VerticalPushModifier(offset: offset),  // Start from bottom
-                identity: VerticalPushModifier(offset: 0)
-            ),
-            removal: .modifier(
-                active: VerticalPushModifier(offset: -offset),  // Slide to top
-                identity: VerticalPushModifier(offset: 0)
-            )
-        )
+        
+        return switch direction {
+        case .top, .bottom:
+                .asymmetric(
+                    insertion: .modifier(
+                        active: VerticalPushModifier(offset: offset),  // Start from bottom
+                        identity: VerticalPushModifier(offset: 0)
+                    ),
+                    removal: .modifier(
+                        active: VerticalPushModifier(offset: -offset),  // Slide to top
+                        identity: VerticalPushModifier(offset: 0)
+                    )
+                )
+        case .leading, .trailing:
+                .asymmetric(
+                    insertion: .modifier(
+                        active: HorizantalPushModifier(offset: offset),  // Start from bottom
+                        identity: HorizantalPushModifier(offset: 0)
+                    ),
+                    removal: .modifier(
+                        active: HorizantalPushModifier(offset: -offset),  // Slide to top
+                        identity: HorizantalPushModifier(offset: 0)
+                    )
+                )
+        }
     }
 }
 
@@ -96,7 +120,7 @@ struct SAKNavigationStack<Content: View>: View {
         .environment(\.push) { view in
             // Set direction to push and animate.
             navigationDirection = .push
-            withAnimation(.easeInOut) {
+            withAnimation(.easeInOut(duration: 10)) {
                 viewStack.append((UUID(), AnyView(view)))
             }
         }

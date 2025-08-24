@@ -11,6 +11,10 @@ import OSLog
 extension os.Logger {
     static let englishPractice = os.Logger(subsystem: "com.StephenKacLozano.EnglishPractice", category: "Default")
     static let view = os.Logger(subsystem: "com.StephenKacLozano.EnglishPractice", category: "View")
+    
+    static func logger(category: String) -> os.Logger {
+        os.Logger(subsystem: "com.StephenKacLozano.EnglishPractice", category: category)
+    }
 }
 
 #if DEBUG
@@ -20,6 +24,10 @@ public struct Logger: Sendable {
     
     static var englishPractice: Logger { Logger(logger: .englishPractice) }
     static var view: Logger { Logger(logger: .view) }
+    
+    static func logger(category: String) -> Logger {
+        Logger(logger: os.Logger.logger(category: category))
+    }
     
     public func log(_ message: String) {
         logger.log("\(message)")
