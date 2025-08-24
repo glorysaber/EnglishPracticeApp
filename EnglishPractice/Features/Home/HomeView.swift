@@ -13,7 +13,7 @@ struct HomeView: View {
     let buttonAction: () -> Void
     
     @State var gradientColor: Color = .purple
-    @State var endPoint: UnitPoint = .bottomTrailing
+    @State var endPoint: UnitPoint = .init(x: 0.8, y: 0.8)
     
     var overlayColor: Color {
         colorPalette.text.overlay
@@ -82,7 +82,7 @@ struct HomeView: View {
     
     @ViewBuilder
     var gradientBackground: some View {
-        LinearGradient(colors: [colorPalette.gradient.start, colorPalette.gradient.start2, colorPalette.gradient.end], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [gradientColor, colorPalette.gradient.end], startPoint: .topLeading, endPoint: endPoint)
             .ignoresSafeArea()
             .onChange(of: colorPalette, initial: true) { oldValue, newValue in
                 gradientColor = colorPalette.gradient.start
@@ -91,7 +91,7 @@ struct HomeView: View {
                         .repeatForever(autoreverses: true)
                 ) {
                     gradientColor = colorPalette.gradient.start2
-                    endPoint = .bottomLeading
+                    endPoint = .init(x: 0, y: 0.9)
                 }
             }
     }

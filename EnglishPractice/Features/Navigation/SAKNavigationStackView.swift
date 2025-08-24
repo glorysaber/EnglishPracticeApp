@@ -29,17 +29,17 @@ struct HorizantalPushModifier: ViewModifier {
 // Extension to create the transition
 extension AnyTransition {
     @MainActor
-    static func verticalPush(towards direction: SwiftUI.Edge = .top) -> AnyTransition {
+    static func verticalPush(towards direction: SwiftUI.Edge = .top, size: CGSize) -> AnyTransition {
         
         let offset: CGFloat = switch direction {
         case .top:
-            UIScreen.main.bounds.height
+            size.height
         case .bottom:
-            -UIScreen.main.bounds.height
+            -size.height
         case .leading:
-            UIScreen.main.bounds.width
+            size.width
         case .trailing:
-            -UIScreen.main.bounds.width
+            -size.width
         }
         
         
@@ -85,6 +85,8 @@ struct SAKNavigationStack<Content: View>: View {
     /// Direction of the navigation action to determine the transition.
     @State private var navigationDirection: NavigationDirection = .push
     
+    @State private var containerSize: CGSize = .zero
+    
     /// The root view to display when the stack is empty.
     private let rootView: Content
     
@@ -96,8 +98,8 @@ struct SAKNavigationStack<Content: View>: View {
     
     /// Computes the dynamic transition based on navigation direction.
     private func dynamicTransition() -> AnyTransition {
-        let insertion: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top) : .verticalPush(towards: .bottom)
-        let removal: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top) : .verticalPush(towards: .bottom)
+        let insertion: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top, size: containerSize) : .verticalPush(towards: .bottom, size: containerSize)
+        let removal: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top, size: containerSize) : .verticalPush(towards: .bottom, size: containerSize)
         return .asymmetric(
             insertion: insertion,
             removal: removal
@@ -116,11 +118,16 @@ struct SAKNavigationStack<Content: View>: View {
                     .transition(dynamicTransition())
             }
         }
+        .onGeometryChange(for: CGSize.self) {
+            $0.size
+        } action: { newSize in
+            containerSize = newSize
+        }
         // Inject navigation actions into the environment for child views to use.
         .environment(\.push) { view in
             // Set direction to push and animate.
             navigationDirection = .push
-            withAnimation(.easeInOut(duration: 10)) {
+            withAnimation(.easeInOut) {
                 viewStack.append((UUID(), AnyView(view)))
             }
         }

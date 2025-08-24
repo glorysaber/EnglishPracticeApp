@@ -37,7 +37,7 @@ struct PhoneticPracticeView: View {
     private var logger: Logger
     
     @State private var gradientColor: Color = .purple
-    @State private var endPoint: UnitPoint = .topTrailing
+    @State private var endPoint: UnitPoint = .init(x: 1, y: 0.2)
     
     private var phoneticDisplay: some View {
         HStack(spacing: 12) {
@@ -85,6 +85,21 @@ struct PhoneticPracticeView: View {
         }
     }
     
+    private var backgroundGradient: some View {
+        LinearGradient(colors: [gradientColor, colorPalette.gradient.end], startPoint: .bottom, endPoint: endPoint)
+            .ignoresSafeArea()
+            .onChange(of: colorPalette, initial: true) { oldValue, newValue in
+                gradientColor = colorPalette.gradient.start
+                withAnimation(
+                    Animation.easeInOut(duration: 10.0)
+                        .repeatForever(autoreverses: true)
+                ) {
+                    gradientColor = colorPalette.gradient.start2
+                    endPoint = .init(x: 0, y: 0.1)
+                }
+            }
+    }
+    
     private var guessInput: some View {
         Group {
             if case .guessing = state.practiceState {
@@ -113,19 +128,7 @@ struct PhoneticPracticeView: View {
     
     var body: some View {
         ZStack {
-            LinearGradient(colors: [gradientColor, colorPalette.gradient.start2, colorPalette.gradient.end], startPoint: .bottom, endPoint: endPoint)
-                .ignoresSafeArea()
-                .onChange(of: colorPalette, initial: true) { oldValue, newValue in
-                    gradientColor = colorPalette.gradient.start
-                    withAnimation(
-                        Animation.easeInOut(duration: 10.0)
-                            .repeatForever(autoreverses: true)
-                    ) {
-                        gradientColor = colorPalette.gradient.start2
-                        endPoint = .topLeading
-                    }
-                }
-            
+            backgroundGradient
             VStack(spacing: 24) {
                 Text("What word is this?")
                     .font(.title)
