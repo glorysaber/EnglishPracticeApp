@@ -2,7 +2,7 @@
 //  Logging.swift
 //  EnglishPractice
 //
-//  Created by Admin on 8/16/25.
+//  Created by Stephen Kac Lozano on 8/16/25.
 //
 
 import Foundation

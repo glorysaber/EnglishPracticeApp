@@ -2,7 +2,7 @@
 //  GeenralError.swift
 //  EnglishPractice
 //
-//  Created by Admin on 8/17/25.
+//  Created by Stephen Kac Lozano on 8/17/25.
 //
 
 import Foundation
