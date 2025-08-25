@@ -74,32 +74,59 @@ enum NavigationDirection {
     case push, pop
 }
 
+@Observable
+final class SAKNavigationStackModel<Route: Hashable> {
+    fileprivate var routeStack: [(Route, UUID)] = []
+    fileprivate var navigationDirection: NavigationDirection = .push
+    
+    func push(_ route: Route) {// Set direction to push and animate.
+        navigationDirection = .push
+        withAnimation(.easeInOut) {
+            routeStack.append((route, UUID()))
+        }
+    }
+    
+    func pop() {
+        navigationDirection = .pop
+        withAnimation(.easeInOut) {
+            _ = routeStack.popLast()
+        }
+    }
+    
+    func popToRoot() {
+        navigationDirection = .pop
+        withAnimation(.spring()) {
+            routeStack.removeAll()
+        }
+    }
+}
+
 /// A custom navigation stack for SwiftUI that manages a stack of views with push/pop functionality.
 /// Uses environment values for navigation actions and supports customizable transitions.
 /// Optimized by minimizing view recreations and using efficient state management.
 /// Uses @Entry macro for environment values to resolve concurrency issues in Swift 6.
-struct SAKNavigationStack<Content: View>: View {
-    /// Stack to hold navigated views with unique IDs for identity preservation.
-    @State private var viewStack: [(id: UUID, view: AnyView)] = []
+struct SAKNavigationStackView<Content: View, Route: Hashable, RouteView: View>: View {
     
-    /// Direction of the navigation action to determine the transition.
-    @State private var navigationDirection: NavigationDirection = .push
+    @State private var stackModel: SAKNavigationStackModel<Route>
     
     @State private var containerSize: CGSize = .zero
     
-    /// The root view to display when the stack is empty.
+    @ViewBuilder
     private let rootView: Content
     
-    /// Initializes the navigation stack with a root view.
-    /// - Parameter rootView: A view builder for the root content.
-    init(@ViewBuilder rootView: () -> Content) {
+    @ViewBuilder
+    private let routeProvider: (Route) -> RouteView
+    
+    init(stackModel: SAKNavigationStackModel<Route>, @ViewBuilder rootView: () -> Content, @ViewBuilder routeProvider: @escaping (Route) -> RouteView) {
+        self.stackModel = stackModel
         self.rootView = rootView()
+        self.routeProvider = routeProvider
     }
     
     /// Computes the dynamic transition based on navigation direction.
     private func dynamicTransition() -> AnyTransition {
-        let insertion: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top, size: containerSize) : .verticalPush(towards: .bottom, size: containerSize)
-        let removal: AnyTransition = navigationDirection == .push ? .verticalPush(towards: .top, size: containerSize) : .verticalPush(towards: .bottom, size: containerSize)
+        let insertion: AnyTransition = stackModel.navigationDirection == .push ? .verticalPush(towards: .top, size: containerSize) : .verticalPush(towards: .bottom, size: containerSize)
+        let removal: AnyTransition = stackModel.navigationDirection == .push ? .verticalPush(towards: .top, size: containerSize) : .verticalPush(towards: .bottom, size: containerSize)
         return .asymmetric(
             insertion: insertion,
             removal: removal
@@ -108,13 +135,12 @@ struct SAKNavigationStack<Content: View>: View {
     
     var body: some View {
         ZStack {
-            // Display root view when stack is empty, with opacity transition for smooth root return.
-            if viewStack.isEmpty {
-                rootView
+            if let (currentRoute, uuid) = stackModel.routeStack.last {
+                routeProvider(currentRoute)
+                    .id(uuid)
                     .transition(dynamicTransition())
             } else {
-                // Display the top view from the stack with the dynamic transition.
-                viewStack.last?.view
+                rootView
                     .transition(dynamicTransition())
             }
         }
@@ -123,54 +149,5 @@ struct SAKNavigationStack<Content: View>: View {
         } action: { newSize in
             containerSize = newSize
         }
-        // Inject navigation actions into the environment for child views to use.
-        .environment(\.push) { view in
-            // Set direction to push and animate.
-            navigationDirection = .push
-            withAnimation(.easeInOut) {
-                viewStack.append((UUID(), AnyView(view)))
-            }
-        }
-        .environment(\.pop) {
-            // Set direction to pop and animate.
-            navigationDirection = .pop
-            withAnimation(.easeInOut) {
-                _ = viewStack.popLast()
-            }
-        }
-        .environment(\.popToRoot) {
-            // Set direction to pop and animate.
-            navigationDirection = .pop
-            withAnimation(.spring()) {
-                viewStack.removeAll()
-            }
-        }
-    }
-}
-
-// Environment values defined using @Entry to handle concurrency safely in Swift 6.
-extension EnvironmentValues {
-    /// Pushes a new view onto the stack.
-    @Entry var push: (AnyView) -> Void = { _ in
-        Logger.view.error("No Navigation Stack found when push was called. \(Thread.callStackSymbols)")
-        #if DEBUG
-        fatalError()
-        #endif
-    }
-    
-    /// Pops the top view from the stack.
-    @Entry var pop: () -> Void = {
-        Logger.view.error("No Navigation Stack found when pop was called. \(Thread.callStackSymbols)")
-        #if DEBUG
-        fatalError()
-        #endif
-    }
-    
-    /// Pops all views back to the root.
-    @Entry var popToRoot: () -> Void = {
-        Logger.view.error("No Navigation Stack found when popToRoot was called. \(Thread.callStackSymbols)")
-        #if DEBUG
-        fatalError()
-        #endif
     }
 }

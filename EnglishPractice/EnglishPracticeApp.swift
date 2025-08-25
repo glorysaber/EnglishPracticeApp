@@ -7,16 +7,36 @@
 
 import SwiftUI
 
+enum AppRoutes: Hashable {
+    case practiceView
+    case text
+}
+
+@MainActor
+private let colorManager = ColorPaletteManager(resource: Bundle.main.url(forResource: "Colors", withExtension: "json")!)
+
+@MainActor
+private let stackModel = SAKNavigationStackModel<AppRoutes>()
+
 @main
 struct EnglishPracticeApp: App {
-    static let colorManager = ColorPaletteManager(resource: Bundle.main.url(forResource: "Colors", withExtension: "json")!)
-    
     var body: some Scene {
         WindowGroup {
-            SAKNavigationStack {
-                HomeView(buttonAction: {})
+            SAKNavigationStackView(stackModel: stackModel) {
+                HomeView {
+                    stackModel.push(.practiceView)
+                }
+            } routeProvider: { route in
+                switch route {
+                case .practiceView:
+                    PhoneticPracticeView {
+                        stackModel.pop()
+                    }
+                case .text:
+                    Text("Text")
+                }
             }
-            .adaptiveColorPalette(manager: Self.colorManager)
+            .adaptiveColorPalette(manager: colorManager)
         }
     }
 }

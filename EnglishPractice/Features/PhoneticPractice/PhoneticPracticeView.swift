@@ -28,10 +28,11 @@ final class PhoneticPracticeViewState {
 
 struct PhoneticPracticeView: View {
     
+    let cancelButtonAction: () -> Void
+    
     @State private var state = PhoneticPracticeViewState()
     private let viewModel: PhoneticPracticeViewModel
     
-    @Environment(\.pop) private var pop
     @Environment(\.colorPalette) private var colorPalette
     
     private var logger: Logger
@@ -175,9 +176,9 @@ struct PhoneticPracticeView: View {
                     }
                 
                 Button {
-                    pop()
+                    cancelButtonAction()
                 } label: {
-                    Text("Back").padding(.horizontal, 20).padding(.vertical, 10)
+                    Text("Cancel").padding(.horizontal, 20).padding(.vertical, 10)
                         .foregroundStyle(colorPalette.text.overlay)
                 }
                 .background(colorPalette.button.background)
@@ -193,13 +194,14 @@ struct PhoneticPracticeView: View {
         
     }
     
-    init(initialState: PhoneticPracticeViewState = PhoneticPracticeViewState(), logger: Logger = .view) {
+    init(initialState: PhoneticPracticeViewState = PhoneticPracticeViewState(), logger: Logger = .view, cancelButtonAction: @escaping () -> Void) {
         self.state = initialState
         self.logger = logger
+        self.cancelButtonAction = cancelButtonAction
         self.viewModel = PhoneticPracticeViewModel(logger: logger, speechService: .shared, viewState: initialState)
     }
 }
 
 #Preview {
-    PhoneticPracticeView().adaptiveColorPalette(manager: ._debugManager())
+    PhoneticPracticeView(cancelButtonAction: {}).adaptiveColorPalette(manager: ._debugManager())
 }

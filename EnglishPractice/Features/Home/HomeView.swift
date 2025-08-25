@@ -19,7 +19,6 @@ struct HomeView: View {
         colorPalette.text.overlay
     }
     
-    @Environment(\.push) var push
     @Environment(\.logger) var logger
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.colorPalette) var colorPalette
@@ -77,7 +76,6 @@ struct HomeView: View {
     private func buttonPressed() {
         logger.log("Practice English Button pressed")
         buttonAction()
-        push(AnyView(PhoneticPracticeView()))
     }
     
     @ViewBuilder
