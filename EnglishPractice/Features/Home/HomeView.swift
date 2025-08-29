@@ -95,7 +95,9 @@ struct HomeView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     HomeView(buttonAction: {})
         .adaptiveColorPalette(manager: ._debugManager())
 }
+#endif

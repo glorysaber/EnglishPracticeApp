@@ -7,6 +7,7 @@
 
 import Foundation
 import AVFoundation
+import os.log
 
 @MainActor
 final class SpeechSynthesisService: Sendable {

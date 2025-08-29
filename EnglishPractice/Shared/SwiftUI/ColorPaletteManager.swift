@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os.log
 
 // Class to manage and choose palettes
 @Observable
@@ -55,7 +56,7 @@ final class ColorPaletteManager {
         #if !DEBUG
         Logger.englishPractice.log("Loading debug shared instance for ColorPaletteManager!!!!! \(file):\(line)")
         #endif
-        ColorPaletteManager(resource: Bundle.main.url(forResource: "Colors", withExtension: "json")!) { error in
+        return ColorPaletteManager(resource: Bundle.main.url(forResource: "Colors", withExtension: "json")!) { error in
             assertionFailure("Failed to load assets with Error: \(error)")
         }
     }

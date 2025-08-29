@@ -5,10 +5,14 @@
 //  Created by Stephen Kac Lozano on 8/16/25.
 //
 
-public import SwiftUI
+import SwiftUI
+#if DEBUG
 import OSLog
+#else
+import OSLog
+#endif
 
-public extension EnvironmentValues {
+extension EnvironmentValues {
     /// Pushes a new view onto the stack.
     @Entry var logger: Logger = .view
 }

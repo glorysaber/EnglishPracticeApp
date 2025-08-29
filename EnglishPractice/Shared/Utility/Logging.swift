@@ -17,36 +17,34 @@ extension os.Logger {
     }
 }
 
-#if DEBUG
 // This is to workaround a bug in Swift Previews
-public struct Logger: Sendable {
+struct Logger: Sendable {
     private let logger: os.Logger
-    
+
     static var englishPractice: Logger { Logger(logger: .englishPractice) }
     static var view: Logger { Logger(logger: .view) }
-    
+
     static func logger(category: String) -> Logger {
         Logger(logger: os.Logger.logger(category: category))
     }
-    
-    public func log(_ message: String) {
+
+    func log(_ message: String) {
         logger.log("\(message)")
     }
 
-    public func info(_ message: String) {
+    func info(_ message: String) {
         logger.info("\(message)")
     }
 
-    public func warning(_ message: String) {
+    func warning(_ message: String) {
         logger.warning("\(message)")
     }
 
-    public func error(_ message: String) {
+    func error(_ message: String) {
         logger.error("\(message)")
     }
 
-    public func critical(_ message: String) {
+    func critical(_ message: String) {
         logger.critical("\(message)")
     }
 }
-#endif

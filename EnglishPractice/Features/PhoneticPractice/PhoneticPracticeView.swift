@@ -202,6 +202,8 @@ struct PhoneticPracticeView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     PhoneticPracticeView(cancelButtonAction: {}).adaptiveColorPalette(manager: ._debugManager())
 }
+#endif
