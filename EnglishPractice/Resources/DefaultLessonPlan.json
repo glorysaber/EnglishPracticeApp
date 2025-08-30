@@ -1,0 +1,145 @@
+{
+  "formatVersion": 2,
+  "lastUpdated": "2025-08-30T12:00:00Z",
+  "presetPaths": [
+    {
+      "id": "beginner-phonetics",
+      "title": "Beginner Phonetics",
+      "description": "Basic English phonemes and common words",
+      "difficulty": "beginner",
+      "estimatedDuration": 15,
+      "lessons": [
+        {
+          "id": "lesson-001",
+          "title": "Short Vowels",
+          "description": "Learn English short vowel sounds with mixed practice",
+          "durationEstimate": 15,
+          "segments": [
+            {
+              "id": "short-vowels-phonetic",
+              "practiceType": "phonetic",
+              "title": "Phonetic Practice",
+              "description": "Sound recognition",
+              "durationEstimate": 5,
+              "wordList": ["cat", "bed", "big", "dog", "fun"],
+              "objectives": ["Identify short vowel sounds"],
+              "ordering": 1
+            },
+            {
+              "id": "short-vowels-speaking",
+              "practiceType": "speaking",
+              "title": "Speaking Practice",
+              "description": "Pronunciation practice",
+              "durationEstimate": 7,
+              "wordList": ["cat", "bed", "big"],
+              "objectives": ["Pronounce vowel patterns correctly", "Build fluency"],
+              "ordering": 2
+            },
+            {
+              "id": "short-vowels-vocab",
+              "practiceType": "vocabulary",
+              "title": "Vocabulary Recognition",
+              "description": "Word association practice",
+              "durationEstimate": 3,
+              "wordList": ["cat", "dog", "fun"],
+              "objectives": ["Learn word meanings", "Build vocabulary"],
+              "ordering": 3
+            }
+          ],
+          "learningObjectives": ["Master short vowel patterns", "Combine reading/writing/speaking skills", "Build comprehensive word knowledge"]
+        },
+        {
+          "id": "lesson-002",
+          "title": "Silent Letters",
+          "description": "Master commonly silent letters",
+          "practiceType": "phonetic",
+          "durationEstimate": 8,
+          "wordList": ["know", "write", "listen", "castle", "sword"],
+          "learningObjectives": ["Recognize silent K", "Identify silent W and silent T"]
+        },
+        {
+          "id": "lesson-003",
+          "title": "TH Sound Variations",
+          "description": "Voiced and voiceless TH sounds",
+          "practiceType": "phonetic",
+          "durationEstimate": 6,
+          "wordList": ["this", "that", "think", "mother", "father"],
+          "learningObjectives": ["Distinguish ð vs θ", "Practice tongue position"]
+        }
+      ]
+    },
+    {
+      "id": "speaking-essentials",
+      "title": "Speaking Essentials",
+      "description": "Common phrases and pronunciation",
+      "difficulty": "intermediate",
+      "estimatedDuration": 20,
+      "lessons": [
+        {
+          "id": "lesson-101",
+          "title": "Greetings & Introductions",
+          "description": "Basic English conversation starters",
+          "practiceType": "speaking",
+          "durationEstimate": 10,
+          "wordList": ["hello", "good morning", "my name is", "how are you?"],
+          "learningObjectives": ["Pronounce common greetings", "Practice introductions"]
+        },
+        {
+          "id": "lesson-102",
+          "title": "Numbers 1-20",
+          "description": "Essential numbers for daily English use",
+          "practiceType": "numbers",
+          "durationEstimate": 8,
+          "wordList": ["one", "two", "five", "ten", "twenty"],
+          "learningObjectives": ["Pronounce English numbers", "Practice counting to 20"]
+        }
+      ]
+    },
+    {
+      "id": "comprehensive-review",
+      "title": "Comprehensive Review",
+      "description": "Mixed practice across all skills",
+      "difficulty": "advanced",
+      "estimatedDuration": 30,
+      "lessons": [
+        {
+          "id": "lesson-201",
+          "title": "Mixed Vocabulary",
+          "description": "English words with multiple practice types",
+          "practiceType": "vocabulary",
+          "durationEstimate": 12,
+          "wordList": ["school", "teacher", "student", "book", "homework"],
+          "learningObjectives": ["Learn school-related vocabulary", "Practice common English nouns"]
+        },
+        {
+          "id": "lesson-202",
+          "title": "Advanced Phonetics",
+          "description": "Complex English phonetic patterns",
+          "practiceType": "phonetic",
+          "durationEstimate": 18,
+          "wordList": ["through", "thorough", "cough", "enough", "thought"],
+          "learningObjectives": ["Master ough Phonetic patterns", "Distinguish similar sounds"]
+        }
+      ]
+    }
+  ],
+  "standaloneLessons": [
+    {
+      "id": "lesson-audio-practice",
+      "title": "Audio Comprehension Basics",
+      "description": "Listen and identify spoken English words",
+      "practiceType": "listening",
+      "durationEstimate": 10,
+      "wordList": ["red", "blue", "yellow", "green"],
+      "learningObjectives": ["Recognize basic English words", "Improve listening skills"]
+    }
+  ],
+  "configuration": {
+    "defaultWordsPerLesson": 5,
+    "maxAttemptsPerWord": 3,
+    "hintLevelsEnabled": ["visual", "phonetic", "context"],
+    "practiceTypesSupported": ["phonetic", "speaking", "numbers", "vocabulary", "listening"],
+    "language": "en-US",
+    "region": "United States"
+  }
+}

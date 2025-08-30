@@ -9,8 +9,9 @@ import Foundation
 import OSLog
 
 extension os.Logger {
-    static let englishPractice = os.Logger(subsystem: "com.StephenKacLozano.EnglishPractice", category: "Default")
-    static let view = os.Logger(subsystem: "com.StephenKacLozano.EnglishPractice", category: "View")
+    static let englishPractice = logger(category: "Default")
+    static let view = logger(category: "View")
+    static let dataStorage = logger(category: "DataStorage")
     
     static func logger(category: String) -> os.Logger {
         os.Logger(subsystem: "com.StephenKacLozano.EnglishPractice", category: category)
@@ -23,6 +24,7 @@ struct Logger: Sendable {
 
     static var englishPractice: Logger { Logger(logger: .englishPractice) }
     static var view: Logger { Logger(logger: .view) }
+    static var dataStorage: Logger { Logger(logger: .dataStorage) }
 
     static func logger(category: String) -> Logger {
         Logger(logger: os.Logger.logger(category: category))
