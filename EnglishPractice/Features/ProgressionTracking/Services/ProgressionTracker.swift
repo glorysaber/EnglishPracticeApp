@@ -19,23 +19,26 @@ final class ProgressionTracker {
         Self.logger
     }
 
-    /// In-memory cache of the progression database
-    private var progressionDB = WordProgressionDatabase()
-
     /// Loading states for better state management
-    enum LoadingState {
+    enum State {
         case notLoaded
-        case loading(Task<Void, any Error>?)
-        case loaded
+        case loading
+        case loaded(WordProgressionDatabase)
+        case dirty(WordProgressionDatabase)
         case failed(any Error)
+        
+        var database: WordProgressionDatabase? {
+            switch self {
+            case .loaded(let db), .dirty(let db):
+                return db
+            default:
+                return nil
+            }
+        }
     }
-
-    /// Current loading state of progression data
-    private var loadingState: LoadingState = .notLoaded
-
-    /// Whether data has been modified since last save
-    private var isDirty = false
-
+    
+    var state: State = .notLoaded
+    
     init(storageManager: DataStorageManager) {
         self.storageManager = storageManager
     }
@@ -45,92 +48,141 @@ final class ProgressionTracker {
     /// Load progression data from persistent storage
     func loadProgressionData() async throws {
         // Prevent concurrent loading
-        if case .loading = loadingState { return }
+        guard case .notLoaded = state else { return }
 
-        loadingState = .loading(nil)
+        state = .loading
         let directoryURL = storageManager.profileDirectoryURL()
         let filename = "word_progression.json"
 
         do {
-            self.progressionDB = try storageManager.loadFromJSON(
+            let progressionDB = try storageManager.loadFromJSON(
                 WordProgressionDatabase.self,
                 from: filename,
                 in: directoryURL
             )
-            loadingState = .loaded
+            state = .loaded(progressionDB)
             logger.log("Loaded word progression data for \(progressionDB.totalPractices) total practices")
         } catch {
-            // Create empty database if file doesn't exist
-            self.progressionDB = WordProgressionDatabase()
-            loadingState = .loaded
-            logger.log("Created new word progression database")
+            // TODO: Throw an error
         }
     }
 
     /// Save progression data to persistent storage
-    func saveProgressionData() async throws {
-        guard case .loaded = loadingState else {
-            throw NSError(domain: "ProgressionTracker", code: -1, userInfo: [NSLocalizedDescriptionKey: "Progression data not loaded"])
+    func saveProgressionData(force: Bool = false) async throws {
+        
+        try await ifLoaded { progressionDB, isDirty in
+            
+            let directoryURL = storageManager.profileDirectoryURL()
+            let filename = "word_progression.json"
+            
+            try storageManager.saveToJSON(
+                progressionDB,
+                to: filename,
+                in: directoryURL
+            )
+            
+            if isDirty {
+                state = .loaded(progressionDB)
+            }
+            
+            logger.log("Saved word progression data for \(progressionDB.uniqueWords.count) words")
         }
-
-        let directoryURL = storageManager.profileDirectoryURL()
-        let filename = "word_progression.json"
-
-        try storageManager.saveToJSON(
-            progressionDB,
-            to: filename,
-            in: directoryURL
-        )
-
-        isDirty = false
-        logger.log("Saved word progression data for \(progressionDB.uniqueWords.count) words")
     }
 
     /// Ensure data is loaded before operations
-    private func ensureLoaded() async throws {
-        if case .notLoaded = loadingState {
-            try await loadProgressionData()
-        } else if case .failed(let error) = loadingState {
+    private func ifLoaded<T>(perform: (WordProgressionDatabase, _ dirty: Bool) async throws -> sending T) async throws -> sending T {
+        switch state {
+        case .loaded(let db):
+            try await perform(db, false)
+        case .dirty(let db):
+            try await perform(db, true)
+        case .notLoaded:
+            throw NSError(domain: "ProgressionTracker", code: -1, userInfo: [NSLocalizedDescriptionKey: "Progression data not loaded"])
+        case .loading:
+            throw NSError(domain: "ProgressionTracker", code: -1, userInfo: [NSLocalizedDescriptionKey: "Progression data is loading"])
+        case .failed(let error):
             throw error
         }
     }
 
-    /// Execute operation with loaded database using closure-based API
-    func performWithLoadedDatabase<T>(
-        _ operation: @escaping (WordProgressionDatabase) throws -> T
-    ) async throws -> T {
-        try await ensureLoaded()
-        return try operation(progressionDB)
-    }
 
     /// Save if data has been modified
     func saveIfDirty() async throws {
-        if isDirty {
+        if case .dirty = state {
             try await saveProgressionData()
         }
     }
 
-    /// Mark data as dirty (modified)
+    // MARK: - Helper Methods
+
+    /// Mark state as dirty
     private func markDirty() {
-        isDirty = true
+        if case .loaded(let db) = state {
+            state = .dirty(db)
+        }
     }
 
     // MARK: - State Access
 
     /// Get current loading state for external monitoring
+    enum LoadingState {
+        case notLoaded, loading, loaded, dirty, failed
+    }
+
     var currentLoadingState: LoadingState {
-        loadingState
+        switch state {
+        case .notLoaded: .notLoaded
+        case .loading: .loading
+        case .loaded: .loaded
+        case .dirty: .dirty
+        case .failed: .failed
+        }
     }
 
     /// Check if data has been modified since last save
     var isDataDirty: Bool {
-        isDirty
+        switch state {
+        case .dirty: true
+        default: false
+        }
     }
 
     /// Check if progression data is currently loaded
     var isDataLoaded: Bool {
-        if case .loaded = loadingState { return true }
-        return false
+        switch state {
+        case .loaded, .dirty: true
+        default: false
+        }
+    }
+
+    /// Access to the current database (for backward compatibility)
+    private var progressionDB: WordProgressionDatabase {
+        get {
+            switch state {
+            case .loaded(let db), .dirty(let db):
+                return db
+            default:
+                fatalError("Attempted to access database while not loaded")
+            }
+        }
+        set {
+            switch state {
+            case .loaded, .dirty:
+                state = .dirty(newValue)
+            default:
+                fatalError("Cannot set database while not loaded")
+            }
+        }
+    }
+
+    /// New state-based property access
+    private var loadingState: LoadingState {
+        currentLoadingState
+    }
+
+    /// New state-based property access
+    private var isDirty: Bool {
+        isDataDirty
     }
 
     // MARK: - Progression Recording
@@ -146,158 +198,169 @@ final class ProgressionTracker {
         sessionId: UUID,
         timestamp: Date = .now
     ) async throws {
-        try await ensureLoaded()
-
-        let attempt = PracticeAttempt(
-            accuracy: accuracy,
-            timeSpent: timeSpent,
-            attempts: attempts,
-            hintsUsed: hintsUsed,
-            timestamp: timestamp,
-            sessionId: sessionId
-        )
-
-        // Get or create progression for this word/type combination
-        let existingProgression = progressionDB.getProgression(for: word, type: practiceType)
-        let baseProgression: WordProgression
-
-        if let existing = existingProgression {
-            // Create a new progression with updated attempts
-            baseProgression = WordProgression(
-                id: existing.id,
-                word: existing.word,
-                practiceType: existing.practiceType,
-                firstPracticed: existing.firstPracticed,
-                practiceHistory: existing.practiceHistory + [attempt]
+        try await ifLoaded { progressionDB, _ in
+            let attempt = PracticeAttempt(
+                accuracy: accuracy,
+                timeSpent: timeSpent,
+                attempts: attempts,
+                hintsUsed: hintsUsed,
+                timestamp: timestamp,
+                sessionId: sessionId
             )
-        } else {
-            // Create new progression
-            baseProgression = WordProgression(
-                id: UUID(),
-                word: word,
-                practiceType: practiceType,
-                firstPracticed: timestamp,
-                practiceHistory: [attempt]
-            )
+
+            // Get or create progression for this word/type combination
+            let existingProgression = progressionDB.getProgression(for: word, type: practiceType)
+            let baseProgression: WordProgression
+
+            if let existing = existingProgression {
+                // Create a new progression with updated attempts
+                baseProgression = WordProgression(
+                    id: existing.id,
+                    word: existing.word,
+                    practiceType: existing.practiceType,
+                    firstPracticed: existing.firstPracticed,
+                    practiceHistory: existing.practiceHistory + [attempt]
+                )
+            } else {
+                // Create new progression
+                baseProgression = WordProgression(
+                    id: UUID(),
+                    word: word,
+                    practiceType: practiceType,
+                    firstPracticed: timestamp,
+                    practiceHistory: [attempt]
+                )
+            }
+
+            // Create new database with updated progression
+            var updatedDB = progressionDB
+            updatedDB.setProgression(baseProgression)
+            self.state = .dirty(updatedDB)
+
+            self.logger.log("Recorded practice attempt: \(word) [\(practiceType.rawValue)] accuracy: \(String(format: "%.2f", accuracy))")
         }
-
-        // Save back to database
-        progressionDB.setProgression(baseProgression)
-        markDirty()
-
-        logger.log("Recorded practice attempt: \(word) [\(practiceType.rawValue)] accuracy: \(String(format: "%.2f", accuracy))")
     }
 
     /// Record multiple practice attempts from a session
     func recordPracticeAttempts(_ attempts: [(word: String, practiceType: PracticeType, accuracy: Double, timeSpent: Double, attempts: Int, hintsUsed: [String], sessionId: UUID)]) async throws {
-        try await ensureLoaded()
+        try await ifLoaded { [self] progressionDB, _ in
+            for attempt in attempts {
+                try await recordPracticeAttempt(
+                    word: attempt.word,
+                    practiceType: attempt.practiceType,
+                    accuracy: attempt.accuracy,
+                    timeSpent: attempt.timeSpent,
+                    attempts: attempt.attempts,
+                    hintsUsed: attempt.hintsUsed,
+                    sessionId: attempt.sessionId
+                )
+            }
 
-        for attempt in attempts {
-            try await recordPracticeAttempt(
-                word: attempt.word,
-                practiceType: attempt.practiceType,
-                accuracy: attempt.accuracy,
-                timeSpent: attempt.timeSpent,
-                attempts: attempt.attempts,
-                hintsUsed: attempt.hintsUsed,
-                sessionId: attempt.sessionId
-            )
+            // Save updated database
+            try await saveProgressionData()
+
+            self.logger.log("Recorded \(attempts.count) practice attempts")
         }
-
-        // Save updated database
-        try await saveProgressionData()
-
-        logger.log("Recorded \(attempts.count) practice attempts")
     }
 
     // MARK: - Word-Level Progress Queries
 
     /// Get current mastery level for a specific word and practice type
     func getWordMasteryLevel(word: String, practiceType: PracticeType) async throws -> Double {
-        try await ensureLoaded()
-        guard let progression = progressionDB.getProgression(for: word, type: practiceType) else {
-            return 0.0
+        try await ifLoaded { progressionDB, _ in
+            guard let progression = progressionDB.getProgression(for: word, type: practiceType) else {
+                return 0.0
+            }
+            return ProgressionCalculator.calculateCurrentMastery(for: progression)
         }
-        return ProgressionCalculator.calculateCurrentMastery(for: progression)
     }
 
     /// Get progression history for a word across all practice types
     func getWordProgressionHistory(for word: String) async throws -> [WordProgression] {
-        try await ensureLoaded()
-        return progressionDB.getWordProgressions(for: word)
+        try await ifLoaded { progressionDB, _ in
+            return progressionDB.getWordProgressions(for: word)
+        }
     }
 
     /// Get trend analysis for a specific word and practice type
     func getWordTrend(word: String, practiceType: PracticeType) async throws -> MasteryTrend {
-        try await ensureLoaded()
-        guard let progression = progressionDB.getProgression(for: word, type: practiceType) else {
-            return .unknown
+        try await ifLoaded { progressionDB, _ in
+            guard let progression = progressionDB.getProgression(for: word, type: practiceType) else {
+                return .unknown
+            }
+            return ProgressionCalculator.calculateMasteryTrend(for: progression)
         }
-        return ProgressionCalculator.calculateMasteryTrend(for: progression)
     }
 
     /// Get accuracy progression over time for a word/practice combination
     func getAccuracyProgression(word: String, practiceType: PracticeType) async throws -> [(Date, Double)] {
-        try await ensureLoaded()
-        guard let progression = progressionDB.getProgression(for: word, type: practiceType) else {
-            return []
+        try await ifLoaded { progressionDB, _ in
+            guard let progression = progressionDB.getProgression(for: word, type: practiceType) else {
+                return []
+            }
+            return progression.accuracyProgression()
         }
-        return progression.accuracyProgression()
     }
 
     // MARK: - Intelligent Practice Recommendations
 
     /// Get top practice recommendations based on need (mastery + trend + recency)
     func getPracticeRecommendations(limit: Int = 10) async throws -> [(word: String, practiceType: PracticeType, priority: Double)] {
-        try await ensureLoaded()
-        return WordProgressionAnalytics.getPracticeRecommendations(from: progressionDB, maxWords: limit)
+        try await ifLoaded { progressionDB, _ in
+            return WordProgressionAnalytics.getPracticeRecommendations(from: progressionDB, maxWords: limit)
+        }
     }
 
     /// Get words that haven't been practiced recently
     func getStaleWords(daysThreshold: Int = 7) async throws -> [(word: String, practiceType: PracticeType, daysSince: Double)] {
-        try await ensureLoaded()
-        return WordProgressionAnalytics.getStaleWords(from: progressionDB, daysThreshold: daysThreshold)
+        try await ifLoaded { progressionDB, _ in
+            return WordProgressionAnalytics.getStaleWords(from: progressionDB, daysThreshold: daysThreshold)
+        }
     }
 
     /// Get words that need improvement (low mastery or regressing trend)
     func getWordsNeedingImprovement() async throws -> [(word: String, practiceType: PracticeType, mastery: Double, trend: MasteryTrend)] {
-        try await ensureLoaded()
-        return WordProgressionAnalytics.getWordsNeedingImprovement(from: progressionDB)
+        try await ifLoaded { progressionDB, _ in
+            return WordProgressionAnalytics.getWordsNeedingImprovement(from: progressionDB)
+        }
     }
 
     /// Get practice type statistics for a user
     func getPracticeTypeStats() async throws -> [PracticeType: (totalPractices: Int, averageMastery: Double, improving: Int, regressing: Int)] {
-        try await ensureLoaded()
-        return WordProgressionAnalytics.getPracticeTypeStats(from: progressionDB)
+        try await ifLoaded { progressionDB, _ in
+            return WordProgressionAnalytics.getPracticeTypeStats(from: progressionDB)
+        }
     }
 
     /// Get general statistics about learning progress
     func getLearningProgressStats() async throws -> (uniqueWords: Int, totalPractices: Int, averageMastery: Double, improvingWords: Int, regressingWords: Int) {
-        try await ensureLoaded()
-        return WordProgressionAnalytics.getLearningProgressStats(from: progressionDB)
+        try await ifLoaded { progressionDB, _ in
+            return WordProgressionAnalytics.getLearningProgressStats(from: progressionDB)
+        }
     }
 
     // MARK: - Data Management
 
     /// Clear all progression data (use with caution)
     func clearAllProgressionData() async throws {
-        progressionDB = WordProgressionDatabase()
-        markDirty()
-        try await saveProgressionData()
-        logger.log("Cleared all progression data")
+        try await ifLoaded { progressionDB, _ in
+            state = .dirty(WordProgressionDatabase())
+            try await saveProgressionData()
+            logger.log("Cleared all progression data")
+        }
     }
 
     /// Export progression data for backup/analysis
     func exportProgressionData() async throws -> Data {
-        try await ensureLoaded()
-        return try JSONHelper.encode(progressionDB)
+        try await ifLoaded { progressionDB, _ in
+            return try JSONHelper.encode(progressionDB)
+        }
     }
 
     /// Import progression data
     func importProgressionData(_ data: Data) async throws {
-        self.progressionDB = try JSONHelper.decode(WordProgressionDatabase.self, from: data)
-        loadingState = .loaded
-        markDirty()
+        let importedDB = try JSONHelper.decode(WordProgressionDatabase.self, from: data)
+        state = .dirty(importedDB)
         try await saveProgressionData()
         logger.log("Imported progression data")
     }
