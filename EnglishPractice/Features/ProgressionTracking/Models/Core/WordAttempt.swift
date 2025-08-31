@@ -26,9 +26,6 @@ struct WordAttempt: Codable, Identifiable, Hashable {
     /// Time spent on this attempt in seconds
     let timeSpent: Double
 
-    /// Practice-type-specific analysis data
-    let practiceAnalysis: PracticeAnalysis
-
     /// Optional confidence rating (0.0 to 1.0) provided by user or system
     let confidence: Double?
 
@@ -41,8 +38,6 @@ struct WordAttempt: Codable, Identifiable, Hashable {
          userInput: String,
          correct: Bool,
          timeSpent: Double,
-         hintsUsed: [String] = [],
-         practiceAnalysis: PracticeAnalysis,
          confidence: Double? = nil,
          metadata: [String: MetadataValue]? = nil) {
         self.id = id
@@ -51,7 +46,6 @@ struct WordAttempt: Codable, Identifiable, Hashable {
         self.userInput = userInput
         self.correct = correct
         self.timeSpent = timeSpent
-        self.practiceAnalysis = practiceAnalysis
         self.confidence = confidence
         self.metadata = metadata
     }
