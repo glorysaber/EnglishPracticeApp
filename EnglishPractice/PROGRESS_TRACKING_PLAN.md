@@ -28,11 +28,14 @@ This document outlines the comprehensive progress tracking system for the Englis
 - [x] **Calculations separated** - WordProgression models are pure data, calculations in separate services
 - [x] **Smart recommendations** - Algorithm-based practice suggestions using mastery + trends + recency
 
-### Phase 3: Session Management (Pending 🔄)
-- [ ] **PracticeSession class** - Manage individual practice sessions
-- [ ] **Session lifecycle** - start, add word attempts, end session
-- [ ] **Word attempt recording** - Record attempts within active sessions
-- [ ] **Per-word accuracy tracking** - Save complete session data
+### Phase 3: Session Management (Ready for Implementation 🔄)
+- [x] **BackgroundTaskManager** - Add to Shared/Utility/BGTaskManager.swift
+- [x] **PracticeSession class** - Manage individual practice sessions
+- [x] **Session lifecycle** - start, add word attempts, end session
+- [x] **Word attempt recording** - Record attempts within active sessions
+- [x] **Per-word accuracy tracking** - Save complete session data
+- [ ] **Async best practices** - Refactor PracticeSession to use BGTaskManager
+- [ ] **Integration testing** - Test proper task lifecycle management
 
 ### Phase 4: Lesson Management (Pending 🔄)
 - [ ] **LessonManager class** - Orchestrates lessons and aggregates results

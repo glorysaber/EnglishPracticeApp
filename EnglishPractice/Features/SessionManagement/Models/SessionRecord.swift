@@ -65,12 +65,6 @@ struct SessionMetadata: Codable, Hashable {
     /// Difficulty level of the practice session
     let difficulty: String
 
-    /// Specific skills or patterns being practiced
-    let focusAreas: [String]
-
-    /// Optional user notes about the session
-    let userNotes: String?
-
     /// Version of the app that created this record
     let appVersion: String
 

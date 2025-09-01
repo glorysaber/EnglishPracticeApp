@@ -12,7 +12,9 @@ extension os.Logger {
     static let englishPractice = logger(category: "Default")
     static let view = logger(category: "View")
     static let dataStorage = logger(category: "DataStorage")
-    
+    static let sessionStorage = logger(category: "SessionStorage")
+    static let backgroundTask = logger(category: "BackgroundTask")
+
     static func logger(category: String) -> os.Logger {
         os.Logger(subsystem: "com.StephenKacLozano.EnglishPractice", category: category)
     }
@@ -22,9 +24,11 @@ extension os.Logger {
 struct Logger: Sendable {
     private let logger: os.Logger
 
-    static var englishPractice: Logger { Logger(logger: .englishPractice) }
-    static var view: Logger { Logger(logger: .view) }
-    static var dataStorage: Logger { Logger(logger: .dataStorage) }
+    static let englishPractice = Logger(logger: .englishPractice)
+    static let view = Logger(logger: .view)
+    static let dataStorage = Logger(logger: .dataStorage)
+    static let sessionStorage = Logger(logger: .sessionStorage)
+    static let backgroundTask = Logger(logger: .backgroundTask)
 
     static func logger(category: String) -> Logger {
         Logger(logger: os.Logger.logger(category: category))

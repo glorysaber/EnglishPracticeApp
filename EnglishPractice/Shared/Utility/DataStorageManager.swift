@@ -6,12 +6,12 @@
 //
 
 import Foundation
+import Synchronization
 
 /// Wrapper around FileManager for data persistence operations
 /// Designed to be easily replaceable with Core Data, Realm, or other storage solutions
-@MainActor
-final class DataStorageManager {
-    private let fileManager: FileManager
+final class DataStorageManager: Sendable {
+    private let fileManager: Mutex<FileManager>
     private let logger: Logger
     private let baseURL: URL
 
@@ -23,14 +23,15 @@ final class DataStorageManager {
         var directoryName: String { rawValue }
     }
 
-    private init(fileManager: FileManager = .default,
+    private init(fileManager: sending FileManager = .default,
                  logger: Logger = .dataStorage) {
-        self.fileManager = fileManager
+        
         self.logger = logger
 
         // Base directory in user's Application Support folder
         let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         self.baseURL = appSupportURL.appendingPathComponent("EnglishPractice")
+        self.fileManager = Mutex<FileManager>(consume fileManager)
 
         createBaseDirectoryIfNeeded()
     }
@@ -51,13 +52,15 @@ final class DataStorageManager {
 
     /// Ensure a directory exists, creating it if necessary
     private func ensureDirectoryExists(at url: URL) {
-        do {
-            if !fileManager.fileExists(atPath: url.path) {
-                try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
-                logger.log("Created directory: \(url.lastPathComponent)")
+        fileManager.withLock { fileManager in
+            do {
+                if !fileManager.fileExists(atPath: url.path) {
+                    try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+                    logger.log("Created directory: \(url.lastPathComponent)")
+                }
+            } catch {
+                logger.error("Failed to create directory at \(url.path): \(error.localizedDescription)")
             }
-        } catch {
-            logger.error("Failed to create directory at \(url.path): \(error.localizedDescription)")
         }
     }
 
@@ -114,32 +117,38 @@ final class DataStorageManager {
 
     /// Check if a file exists
     func fileExists(at filename: String, in directoryURL: URL) -> Bool {
-        let fileURL = directoryURL.appendingPathComponent(filename)
-        return fileManager.fileExists(atPath: fileURL.path)
+        fileManager.withLock { fileManager in
+            let fileURL = directoryURL.appendingPathComponent(filename)
+            return fileManager.fileExists(atPath: fileURL.path)
+        }
     }
 
     /// Delete a file
     func deleteFile(at filename: String, in directoryURL: URL) throws {
-        let fileURL = directoryURL.appendingPathComponent(filename)
-
-        do {
-            try fileManager.removeItem(at: fileURL)
-            logger.log("Deleted file: \(filename)")
-        } catch {
-            logger.error("Failed to delete file \(filename): \(error.localizedDescription)")
-            throw error
+        try fileManager.withLock { fileManager in
+            let fileURL = directoryURL.appendingPathComponent(filename)
+            
+            do {
+                try fileManager.removeItem(at: fileURL)
+                logger.log("Deleted file: \(filename)")
+            } catch {
+                logger.error("Failed to delete file \(filename): \(error.localizedDescription)")
+                throw error
+            }
         }
     }
 
     /// List all files in a directory
     func listFiles(in directoryURL: URL, withExtension fileExtension: String? = nil) throws -> [String] {
-        do {
-            let contents = try fileManager.contentsOfDirectory(atPath: directoryURL.path)
-            let filtered = fileExtension == nil ? contents : contents.filter { $0.hasSuffix(fileExtension!) }
-            return filtered.sorted()
-        } catch {
-            logger.error("Failed to list files in \(directoryURL.path): \(error.localizedDescription)")
-            throw error
+        try fileManager.withLock { fileManager in
+            do {
+                let contents = try fileManager.contentsOfDirectory(atPath: directoryURL.path)
+                let filtered = fileExtension == nil ? contents : contents.filter { $0.hasSuffix(fileExtension!) }
+                return filtered.sorted()
+            } catch {
+                logger.error("Failed to list files in \(directoryURL.path): \(error.localizedDescription)")
+                throw error
+            }
         }
     }
 
@@ -155,30 +164,32 @@ final class DataStorageManager {
         ensureDirectoryExists(at: directoryURL)
         let destinationURL = directoryURL.appendingPathComponent(filename)
 
-        // Skip if file exists and overwrite is false
-        if !overwrite && fileManager.fileExists(atPath: destinationURL.path) {
-            logger.log("Skipping copy for \(filename) - file already exists")
-            return
-        }
-
-        guard let sourceURL = bundle.url(forResource: filename.replacingOccurrences(of: ".json", with: ""),
-                                       withExtension: "json") else {
-            throw NSError(domain: "DataStorageManager", code: -1,
-                         userInfo: [NSLocalizedDescriptionKey: "Bundle file not found: \(filename)"])
-        }
-
-        do {
-            if overwrite {
-                try fileManager.removeItem(at: destinationURL)
-                try fileManager.copyItem(at: sourceURL, to: destinationURL)
-                logger.log("Overwrote bundle file: \(filename)")
-            } else {
-                try fileManager.copyItem(at: sourceURL, to: destinationURL)
-                logger.log("Copied bundle file: \(filename)")
+        try fileManager.withLock { fileManager in
+            // Skip if file exists and overwrite is false
+            if !overwrite && fileManager.fileExists(atPath: destinationURL.path) {
+                logger.log("Skipping copy for \(filename) - file already exists")
+                return
             }
-        } catch {
-            logger.error("Failed to copy bundle file \(filename): \(error.localizedDescription)")
-            throw error
+            
+            guard let sourceURL = bundle.url(forResource: filename.replacingOccurrences(of: ".json", with: ""),
+                                             withExtension: "json") else {
+                throw NSError(domain: "DataStorageManager", code: -1,
+                              userInfo: [NSLocalizedDescriptionKey: "Bundle file not found: \(filename)"])
+            }
+            
+            do {
+                if overwrite {
+                    try fileManager.removeItem(at: destinationURL)
+                    try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                    logger.log("Overwrote bundle file: \(filename)")
+                } else {
+                    try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                    logger.log("Copied bundle file: \(filename)")
+                }
+            } catch {
+                logger.error("Failed to copy bundle file \(filename): \(error.localizedDescription)")
+                throw error
+            }
         }
     }
 
@@ -210,15 +221,17 @@ final class DataStorageManager {
         let cutoffDate = Date().addingTimeInterval(-Double(days) * 24 * 60 * 60)
 
         do {
-            let files = try listFiles(in: directoryURL)
-            for filename in files {
-                let fileURL = directoryURL.appendingPathComponent(filename)
-                let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
-
-                if let modificationDate = attributes[.modificationDate] as? Date,
-                   modificationDate < cutoffDate {
-                    try fileManager.removeItem(at: fileURL)
-                    logger.log("Cleaned up old file: \(filename)")
+            try fileManager.withLock { fileManager in
+                let files = try listFiles(in: directoryURL)
+                for filename in files {
+                    let fileURL = directoryURL.appendingPathComponent(filename)
+                    let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
+                    
+                    if let modificationDate = attributes[.modificationDate] as? Date,
+                       modificationDate < cutoffDate {
+                        try fileManager.removeItem(at: fileURL)
+                        logger.log("Cleaned up old file: \(filename)")
+                    }
                 }
             }
         } catch {
