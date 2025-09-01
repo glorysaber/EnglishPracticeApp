@@ -61,6 +61,8 @@ final class ProgressionCalculator {
 
     /// Calculate days since last practice
     static func calculateDaysSinceLastPractice(for progression: WordProgression) -> Double {
-        Calendar.current.dateComponents([.day], from: progression.lastPracticed, to: .now).day.map { Double($0) } ?? 0
+        let components = Calendar.current.dateComponents([.day, .hour], from: progression.lastPracticed, to: .now)
+        guard let days = components.day, let hours = components.hour else { return 0 }
+        return Double(days) + Double(hours) / 24.0
     }
 }
