@@ -23,8 +23,8 @@ final class SpeechSynthesisService: Sendable {
     }
     
     static let shared = SpeechSynthesisService(logger: .englishPractice)
-    
-    private let audioSession = AVAudioSession.sharedInstance()
+
+    private let audioSession: any AudioSessionProtocol = AudioSessionFactory.createAudioSession()
     private let synthesizer = AVSpeechSynthesizer()
     private let logger: Logger
     private let synthesizerDelegate: SpeechSynthesisServiceDelegate

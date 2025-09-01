@@ -248,7 +248,7 @@ struct ProgressionTrackingTests {
 
     @Test func testCalculatePracticePriorityEdgeCases() {
         // Test with recent practice (should have positive priority)
-        var veryRecentProgression = WordProgression(
+        let veryRecentProgression = WordProgression(
             id: UUID(),
             word: "recent",
             practiceType: .phonetic,
@@ -261,7 +261,7 @@ struct ProgressionTrackingTests {
         #expect(veryRecentPriority > 0.0, "Recent low-accuracy practice should have positive priority")
 
         // Test recently practiced word with moderate progress
-        var moderateProgression = WordProgression(
+        let moderateProgression = WordProgression(
             id: UUID(),
             word: "moderate",
             practiceType: .phonetic,
@@ -354,7 +354,7 @@ struct ProgressionTrackingTests {
         #expect(trend == .improving, "Exactly 5 attempts with clear improvement should be improving")
 
         // Test 4 attempts (below threshold)
-        var fourAttempts = WordProgression(
+        let fourAttempts = WordProgression(
             id: UUID(),
             word: "four",
             practiceType: .phonetic,
@@ -370,7 +370,7 @@ struct ProgressionTrackingTests {
         let baseDate = Date()
 
         // Test oscillating performance - should return a valid trend
-        var oscillating = WordProgression(
+        let oscillating = WordProgression(
             id: UUID(),
             word: "oscillating",
             practiceType: .phonetic,
@@ -388,7 +388,7 @@ struct ProgressionTrackingTests {
         #expect(trend != .unknown, "Should return a definitive trend for oscillating performance")
 
         // Test large negative regression - should identify decline
-        var regressing = WordProgression(
+        let regressing = WordProgression(
             id: UUID(),
             word: "regressing",
             practiceType: .phonetic,
