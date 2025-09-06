@@ -14,7 +14,7 @@ struct PhoneticPracticeViewModel: Sendable {
     let speechService: SpeechSynthesisService
     let viewState: PhoneticPracticeViewState
     let phoneticService = try? PhoneticSpellingService()
-    
+
     init(
         logger: Logger,
         speechService: SpeechSynthesisService,
@@ -23,10 +23,10 @@ struct PhoneticPracticeViewModel: Sendable {
         self.logger = logger
         self.speechService = speechService
         self.viewState = viewState
-        
+
         setup()
     }
-    
+
     func setup() {
         viewState.word = "Mujer"
         if let phoneticService {
@@ -34,24 +34,25 @@ struct PhoneticPracticeViewModel: Sendable {
             viewState.phoneticLetters = viewState.word.compactMap { phoneticService.letterToPhoneticMap[Character(String($0).uppercased())] }
         }
     }
-    
+
     @MainActor
     func speak() {
         Task {
             for (index, letter) in viewState.word.enumerated() {
                 viewState.currentSpeakingIndex = index
-                guard let stream = try? speechService.speak(utterance: String(letter.lowercased())) else { continue }
-                for await event in stream {
-                    if case .finished = event {
-                        break
+                do {
+                    for try await _ in speechService.speak(utterance: String(letter.lowercased())) {
+                        // Continue as normal
                     }
+                } catch {
+                    logger.error("Speech synthesis error: \(error)")
                 }
                 viewState.currentSpeakingIndex = nil
                 try? await ContinuousClock().sleep(for: .seconds(1))
             }
         }
     }
-    
+
     func checkGuess() {
         let isCorrect = viewState.guess.lowercased() == viewState.word.lowercased()
         viewState.practiceState = .finished(correct: isCorrect)
